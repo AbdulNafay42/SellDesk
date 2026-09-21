@@ -73,6 +73,21 @@ export class ProductsService {
         { id: 'v-9', size: 'L', color: 'White', sku: 'TS-WHT-L', price: 1999, stock: 20 },
       ],
     },
+    {
+      id: 'prod-102-1',
+      businessId: 'biz-102',
+      name: 'Khaadi Silk Lawn Kurti - Spring Edition',
+      description: 'Embroidered silk lawn digital printed tunic.',
+      basePrice: 5990,
+      sku: 'KHD-SLK-102',
+      status: 'ACTIVE',
+      imageUrl: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=800&q=80',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      variants: [
+        { id: 'v-102-1', size: 'M', color: 'Maroon', sku: 'KHD-SLK-M', price: 5990, stock: 12 },
+      ],
+    },
   ];
 
   async findAll(businessId: string) {
@@ -87,7 +102,7 @@ export class ProductsService {
     } catch {
       // Fallback to mock data for initial UI render
     }
-    return this.mockProducts;
+    return this.mockProducts.filter((p) => p.businessId === businessId);
   }
 
   async findOne(id: string, businessId: string) {
@@ -101,7 +116,7 @@ export class ProductsService {
       }
     } catch {}
 
-    const found = this.mockProducts.find((p) => p.id === id);
+    const found = this.mockProducts.find((p) => p.id === id && p.businessId === businessId);
     if (!found) throw new NotFoundException('Product not found');
     return found;
   }

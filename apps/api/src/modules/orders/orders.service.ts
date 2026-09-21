@@ -96,6 +96,25 @@ export class OrdersService {
       status: 'SHIPPED',
       createdAt: new Date(Date.now() - 3600000 * 48),
     },
+    {
+      id: 'ord-2001',
+      orderNumber: '#ORD-2001',
+      businessId: 'biz-102',
+      customerName: 'Sadaf Kanwal',
+      customerPhone: '0301-8877665',
+      city: 'Karachi',
+      address: 'Clifton Block 2',
+      productName: 'Khaadi Silk Lawn Kurti - Spring Edition',
+      variantInfo: 'Size: M • Color: Maroon',
+      quantity: 1,
+      subtotal: 5990,
+      shippingFee: 250,
+      totalAmount: 6240,
+      paymentMethod: 'COD',
+      paymentStatus: 'PAID',
+      status: 'DELIVERED',
+      createdAt: new Date(),
+    },
   ];
 
   async findAll(businessId: string, status?: string) {
@@ -104,7 +123,7 @@ export class OrdersService {
         return await this.prisma.order.findMany({
           where: {
             businessId,
-            ...(status ? { status: status as any } : {}),
+            ...(status && status !== 'ALL' ? { status: status as any } : {}),
           },
           include: { customer: true },
           orderBy: { createdAt: 'desc' },
@@ -112,15 +131,21 @@ export class OrdersService {
       }
     } catch {}
 
+    let filtered = this.mockOrders.filter((o) => o.businessId === businessId);
     if (status && status !== 'ALL') {
-      return this.mockOrders.filter((o) => o.status === status);
+      filtered = filtered.filter((o) => o.status === status);
     }
-    return this.mockOrders;
+    return filtered;
   }
 
   async updateStatus(id: string, status: string, businessId: string) {
     try {
       if (this.prisma && (this.prisma as any).order) {
+        const existing = await this.prisma.order.findFirst({
+          where: { id, businessId },
+        });
+        if (!existing) throw new NotFoundException('Order not found');
+
         return await this.prisma.order.update({
           where: { id },
           data: { status: status as any },
@@ -128,7 +153,7 @@ export class OrdersService {
       }
     } catch {}
 
-    const order = this.mockOrders.find((o) => o.id === id);
+    const order = this.mockOrders.find((o) => o.id === id && o.businessId === businessId);
     if (!order) throw new NotFoundException('Order not found');
     order.status = status;
     return order;

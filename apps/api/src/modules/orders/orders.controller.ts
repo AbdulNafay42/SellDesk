@@ -1,26 +1,33 @@
-import { Controller, Get, Post, Patch, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { OrdersService, CreateOrderDto } from './orders.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 
 @Controller('orders')
+@UseGuards(JwtAuthGuard, TenantGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  async findAll(@Query('businessId') businessId?: string, @Query('status') status?: string) {
-    return this.ordersService.findAll(businessId || 'biz-default', status);
+  async findAll(@Req() req: any, @Query('status') status?: string) {
+    return this.ordersService.findAll(req.tenantId, status);
   }
 
   @Post()
-  async create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto);
+  async create(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
+    return this.ordersService.create({
+      ...createOrderDto,
+      businessId: req.tenantId, // Force verified tenant context
+    });
   }
 
   @Patch(':id/status')
   async updateStatus(
     @Param('id') id: string,
     @Body('status') status: string,
-    @Query('businessId') businessId?: string,
+    @Req() req: any,
   ) {
-    return this.ordersService.updateStatus(id, status, businessId || 'biz-default');
+    return this.ordersService.updateStatus(id, status, req.tenantId);
   }
 }
+

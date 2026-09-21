@@ -124,4 +124,84 @@ export class AuthService {
       fullName: mockUser.fullName,
     };
   }
+
+  // Mock dev memberships for testing fallback
+  private mockMemberships: Record<string, { businessId: string; role: string }[]> = {
+    'usr-1': [
+      { businessId: 'biz-default', role: 'OWNER' },
+      { businessId: 'biz-101', role: 'ADMIN' },
+      { businessId: 'biz-102', role: 'STAFF' },
+      { businessId: 'biz-103', role: 'OWNER' },
+    ],
+    'usr-2': [
+      { businessId: 'biz-102', role: 'OWNER' },
+    ],
+  };
+
+  async validateBusinessMembership(
+    userId: string,
+    requestedBusinessId?: string,
+  ): Promise<{ isMember: boolean; targetBusinessId: string; role?: string }> {
+    // 1. Attempt lookup in Prisma Database
+    try {
+      if (this.prisma && (this.prisma as any).businessMember) {
+        if (requestedBusinessId) {
+          const member = await this.prisma.businessMember.findUnique({
+            where: {
+              userId_businessId: {
+                userId,
+                businessId: requestedBusinessId,
+              },
+            },
+          });
+          if (member) {
+            return {
+              isMember: true,
+              targetBusinessId: requestedBusinessId,
+              role: member.role,
+            };
+          }
+        } else {
+          // If no businessId passed, query primary/first business membership
+          const firstMember = await this.prisma.businessMember.findFirst({
+            where: { userId },
+          });
+          if (firstMember) {
+            return {
+              isMember: true,
+              targetBusinessId: firstMember.businessId,
+              role: firstMember.role,
+            };
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Fallback to mock development memberships
+    const userMemberships = this.mockMemberships[userId] || [];
+
+    if (!requestedBusinessId) {
+      const defaultMembership = userMemberships[0] || { businessId: 'biz-default', role: 'STAFF' };
+      return {
+        isMember: userMemberships.length > 0 || userId === 'usr-1',
+        targetBusinessId: defaultMembership.businessId,
+        role: defaultMembership.role,
+      };
+    }
+
+    const match = userMemberships.find((m) => m.businessId === requestedBusinessId);
+    if (match) {
+      return {
+        isMember: true,
+        targetBusinessId: match.businessId,
+        role: match.role,
+      };
+    }
+
+    return {
+      isMember: false,
+      targetBusinessId: requestedBusinessId,
+    };
+  }
 }
+
