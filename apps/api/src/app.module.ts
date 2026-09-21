@@ -11,6 +11,8 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { FollowupsModule } from './modules/followups/followups.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { ShippingModule } from './modules/shipping/shipping.module';
+import { ReturnsModule } from './modules/returns/returns.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
     FollowupsModule,
     AnalyticsModule,
     PaymentsModule,
+    ShippingModule,
+    ReturnsModule,
   ],
   controllers: [AppController],
   providers: [],

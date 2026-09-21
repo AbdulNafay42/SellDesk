@@ -13,6 +13,8 @@ import {
   BellRing,
   BarChart3,
   CreditCard,
+  Truck,
+  RotateCcw,
   Settings,
   Sparkles,
   ChevronRight,
@@ -30,6 +32,8 @@ const navigation = [
   { name: 'Follow-ups', href: '/followups', icon: BellRing, count: 27 },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Payments Ledger', href: '/payments', icon: CreditCard, count: 2 },
+  { name: 'Shipping & Couriers', href: '/shipping', icon: Truck },
+  { name: 'Returns & Exchanges', href: '/returns', icon: RotateCcw },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
