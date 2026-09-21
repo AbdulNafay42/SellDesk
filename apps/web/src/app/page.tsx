@@ -19,7 +19,7 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
       <Sidebar />
       <Header />
 
@@ -28,6 +28,8 @@ export default function DashboardPage() {
         marginTop: '70px',
         flex: 1,
         padding: '32px',
+        backgroundColor: '#090D16',
+        minHeight: 'calc(100vh - 70px)',
       }} className="animate-fade-in">
         {/* Welcome Section */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>

@@ -5,8 +5,6 @@
   --bg-secondary: #111827;
   --bg-card: #111827;
   --bg-card-hover: #1F2937;
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-light: rgba(255, 255, 255, 0.2);
 
   --accent-green: #10B981;
   --accent-green-glow: rgba(16, 185, 129, 0.25);
@@ -41,7 +39,8 @@ html, body {
 }
 
 main {
-  background-color: #090D16;
+  background-color: #090D16 !important;
+  min-height: calc(100vh - 70px);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -52,20 +51,20 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glassmorphism utility card */
 .glass-card {
-  background: #111827 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background-color: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
 }
 
 .glass-pill {
-  background: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
 }
@@ -116,27 +115,27 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.2);
-  color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34D399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.2);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #FBBF24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
 }
 
 .badge-indigo {
-  background: rgba(99, 102, 241, 0.2);
-  color: #A5B4FC;
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.2) !important;
+  color: #A5B4FC !important;
+  border: 1px solid rgba(99, 102, 241, 0.4) !important;
 }
 
 .badge-rose {
-  background: rgba(244, 63, 94, 0.2);
-  color: #FDA4AF;
-  border: 1px solid rgba(244, 63, 94, 0.4);
+  background: rgba(244, 63, 94, 0.2) !important;
+  color: #FDA4AF !important;
+  border: 1px solid rgba(244, 63, 94, 0.4) !important;
 }
 
 /* Form controls */
@@ -159,7 +158,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
   color: #FFFFFF !important;
   border: none;
   border-radius: 10px;
@@ -181,9 +180,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1) !important;
   color: #FFFFFF !important;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 10px;
   padding: 10px 20px;
   font-weight: 600;
@@ -197,8 +196,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Animations */
