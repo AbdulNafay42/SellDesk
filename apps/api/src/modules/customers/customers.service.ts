@@ -66,6 +66,19 @@ export class CustomersService {
       returnedOrders: 1,
       createdAt: new Date('2026-09-05'),
     },
+    {
+      id: 'cust-102-1',
+      businessId: 'biz-102',
+      fullName: 'Sadaf Kanwal',
+      phoneNumber: '0301-8877665',
+      city: 'Karachi',
+      address: 'Clifton Block 2',
+      totalSpent: 11980,
+      totalOrders: 2,
+      deliveredOrders: 2,
+      returnedOrders: 0,
+      createdAt: new Date('2026-09-10'),
+    },
   ];
 
   async findAll(businessId: string) {
@@ -78,7 +91,7 @@ export class CustomersService {
         });
       }
     } catch {}
-    return this.mockCustomers;
+    return this.mockCustomers.filter((c) => c.businessId === businessId);
   }
 
   async findOne(id: string, businessId: string) {
@@ -92,7 +105,7 @@ export class CustomersService {
       }
     } catch {}
 
-    const found = this.mockCustomers.find((c) => c.id === id);
+    const found = this.mockCustomers.find((c) => c.id === id && c.businessId === businessId);
     if (!found) throw new NotFoundException('Customer not found');
     return found;
   }
