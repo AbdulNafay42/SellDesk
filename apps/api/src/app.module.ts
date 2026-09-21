@@ -6,6 +6,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConversationsModule } from './modules/conversations/conversations.modul
     OrdersModule,
     WhatsappModule,
     ConversationsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [],

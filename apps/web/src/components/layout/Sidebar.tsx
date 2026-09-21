@@ -15,11 +15,13 @@ import {
   Settings,
   Sparkles,
   ChevronRight,
+  Bot,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Conversations', href: '/conversations', icon: MessageSquare, badge: 'WhatsApp' },
+  { name: 'AI Engine', href: '/ai', icon: Sparkles, badge: 'RAG' },
   { name: 'Orders', href: '/orders', icon: ShoppingBag, count: 12 },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Products Catalog', href: '/products', icon: Package },
