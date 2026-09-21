@@ -15,6 +15,7 @@ import { ShippingModule } from './modules/shipping/shipping.module';
 import { ReturnsModule } from './modules/returns/returns.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AdminModule } from './modules/admin/admin.module';
     ReturnsModule,
     SettingsModule,
     AdminModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [],
