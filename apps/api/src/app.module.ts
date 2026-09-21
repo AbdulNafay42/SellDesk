@@ -7,6 +7,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { AiModule } from './modules/ai/ai.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { FollowupsModule } from './modules/followups/followups.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { AiModule } from './modules/ai/ai.module';
     WhatsappModule,
     ConversationsModule,
     AiModule,
+    InventoryModule,
+    FollowupsModule,
   ],
   controllers: [AppController],
   providers: [],
