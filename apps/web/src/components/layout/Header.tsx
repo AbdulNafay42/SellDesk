@@ -1,13 +1,23 @@
 'use client';
 
-import React from 'react';
-import { Search, Bell, Store, CheckCircle2, MessageCircle, Menu } from 'lucide-react';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Search, Bell, Store, CheckCircle2, MessageCircle, Menu, ChevronDown, ShieldCheck, Plus } from 'lucide-react';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
+const availableBrands = [
+  { id: 'biz-default', name: 'SellDesk Apparels PK', city: 'Lahore', role: 'Owner' },
+  { id: 'biz-102', name: 'Khaadi Pret Official', city: 'Karachi', role: 'Admin' },
+  { id: 'biz-103', name: 'Sapphire Eastern Wear', city: 'Lahore', role: 'Admin' },
+];
+
 export function Header({ onMenuToggle }: HeaderProps) {
+  const [activeBrand, setActiveBrand] = useState(availableBrands[0]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   return (
     <header style={{
       height: 'var(--header-height)',
@@ -46,19 +56,95 @@ export function Header({ onMenuToggle }: HeaderProps) {
           <Menu style={{ width: '1.25rem', height: '1.25rem' }} />
         </button>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.625rem',
-          background: 'rgba(17, 24, 39, 0.8)',
-          border: '0.0625rem solid rgba(255, 255, 255, 0.1)',
-          padding: '0.375rem 0.875rem',
-          borderRadius: '0.625rem',
-          cursor: 'pointer',
-        }}>
-          <Store style={{ width: '1rem', height: '1rem', color: '#10B981' }} />
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#FFF' }}>UrbanThreads PK</span>
-          <span className="badge badge-indigo" style={{ fontSize: '0.65rem' }}>PKR</span>
+        {/* Brand Switcher Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <div
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              background: 'rgba(17, 24, 39, 0.9)',
+              border: '0.0625rem solid rgba(16, 185, 129, 0.3)',
+              padding: '0.375rem 0.875rem',
+              borderRadius: '0.625rem',
+              cursor: 'pointer',
+            }}
+          >
+            <Store style={{ width: '1rem', height: '1rem', color: '#10B981' }} />
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFF' }}>{activeBrand.name}</span>
+            <span className="badge badge-indigo" style={{ fontSize: '0.65rem' }}>PKR</span>
+            <ChevronDown style={{ width: '0.875rem', height: '0.875rem', color: '#9CA3AF' }} />
+          </div>
+
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 'calc(100% + 0.5rem)',
+                width: '18rem',
+                backgroundColor: '#111827',
+                border: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '0.75rem',
+                boxShadow: '0 0.875rem 2.5rem rgba(0, 0, 0, 0.8)',
+                padding: '0.5rem',
+                zIndex: 50,
+              }}
+            >
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', padding: '0.5rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)' }}>
+                Your Assigned Brand Stores
+              </div>
+              {availableBrands.map((b) => (
+                <div
+                  key={b.id}
+                  onClick={() => {
+                    setActiveBrand(b);
+                    setIsDropdownOpen(false);
+                  }}
+                  style={{
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    background: activeBrand.id === b.id ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    margin: '0.25rem 0',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF' }}>{b.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{b.city} • {b.role}</div>
+                  </div>
+                  {activeBrand.id === b.id && <CheckCircle2 style={{ width: '1rem', height: '1rem', color: '#34D399' }} />}
+                </div>
+              ))}
+
+              <div style={{ borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', paddingTop: '0.375rem', marginTop: '0.375rem' }}>
+                <Link
+                  href="/admin"
+                  onClick={() => setIsDropdownOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: '#818CF8',
+                    textDecoration: 'none',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                  }}
+                >
+                  <ShieldCheck style={{ width: '1rem', height: '1rem' }} />
+                  Super-Admin Platform Portal
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* WhatsApp Webhook Status Badge */}

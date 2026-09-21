@@ -16,6 +16,7 @@ import {
   Truck,
   RotateCcw,
   Settings,
+  ShieldCheck,
   Sparkles,
   ChevronRight,
   X,
@@ -35,6 +36,7 @@ const navigation = [
   { name: 'Shipping & Couriers', href: '/shipping', icon: Truck },
   { name: 'Returns & Exchanges', href: '/returns', icon: RotateCcw },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Super-Admin Portal', href: '/admin', icon: ShieldCheck, badge: 'Platform' },
 ];
 
 interface SidebarProps {
