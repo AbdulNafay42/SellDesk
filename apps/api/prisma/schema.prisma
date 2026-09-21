@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PROCESSING
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id            String           @id @default(uuid())
+  email         String           @unique
+  passwordHash  String
+  fullName      String
+  phoneNumber   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  memberships   BusinessMember[]
+}
+
+model Business {
+  id           String           @id @default(uuid())
+  name         String
+  slug         String           @unique
+  currency     String           @default("PKR")
+  phone        String?
+  city         String?
+  country      String           @default("Pakistan")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  members      BusinessMember[]
+  products     Product[]
+  customers    Customer[]
+  orders       Order[]
+}
+
+model BusinessMember {
+  id          String   @id @default(uuid())
+  userId      String
+  businessId  String
+  role        Role     @default(STAFF)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String
+  products    Product[]
+}
+
+model Product {
+  id          String           @id @default(uuid())
+  businessId  String
+  categoryId  String?
+  name        String
+  description String?
+  basePrice   Float
+  sku         String?
+  status      ProductStatus    @default(ACTIVE)
+  imageUrl    String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category    Category?        @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+
+  @@index([businessId])
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String
+  size      String?  // S, M, L, XL, XXL, Custom
+  color     String?  // Black, White, Red, etc.
+  sku       String   @unique
+  price     Float
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  businessId  String
+  fullName    String
+  phoneNumber String
+  city        String?
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  orders      Order[]
+
+  @@index([businessId, phoneNumber])
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  businessId    String
+  customerId    String
+  orderNumber   String        @unique
+  status        OrderStatus   @default(NEW)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod String        @default("COD") // COD, BankTransfer, EasyPaisa, JazzCash
+  subtotal      Float
+  shippingFee   Float         @default(0)
+  totalAmount   Float
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer      Customer      @relation(fields: [customerId], references: [id])
+
+  @@index([businessId])
+}
