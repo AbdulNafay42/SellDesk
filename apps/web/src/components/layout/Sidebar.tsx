@@ -46,6 +46,23 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [userRole, setUserRole] = React.useState<string>('SUPER_ADMIN');
+
+  const updateRole = React.useCallback(() => {
+    try {
+      const savedPersona = localStorage.getItem('selldesk_persona');
+      if (savedPersona) {
+        const parsed = JSON.parse(savedPersona);
+        setUserRole(parsed.role || 'SUPER_ADMIN');
+      }
+    } catch {}
+  }, []);
+
+  React.useEffect(() => {
+    updateRole();
+    window.addEventListener('selldesk_tenant_changed', updateRole);
+    return () => window.removeEventListener('selldesk_tenant_changed', updateRole);
+  }, [updateRole]);
 
   return (
     <>
@@ -119,8 +136,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.08em', padding: '0.5rem 0.75rem', marginBottom: '0.25rem' }}>
             Main Menu
           </div>
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
+          {navigation
+            .filter((item) => userRole === 'SUPER_ADMIN' || item.href !== '/admin')
+            .map((item) => {
+              const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
               <Link

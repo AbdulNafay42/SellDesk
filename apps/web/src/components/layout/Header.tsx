@@ -37,10 +37,40 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const [activeBrand, setActiveBrand] = useState(personas[0].allowedBrands[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handlePersonaSwitch = (p: typeof personas[0]) => {
+  // Initialize from localStorage on client side
+  React.useEffect(() => {
+    try {
+      const savedPersona = localStorage.getItem('selldesk_persona');
+      const savedBrand = localStorage.getItem('selldesk_active_brand');
+      if (savedPersona) {
+        const parsedP = JSON.parse(savedPersona);
+        setCurrentPersona(parsedP);
+      }
+      if (savedBrand) {
+        const parsedB = JSON.parse(savedBrand);
+        setActiveBrand(parsedB);
+      }
+    } catch {}
+  }, []);
+
+  const changeBrandAndPersona = (p: typeof personas[0], b: typeof personas[0]['allowedBrands'][0]) => {
     setCurrentPersona(p);
-    setActiveBrand(p.allowedBrands[0]);
+    setActiveBrand(b);
     setIsDropdownOpen(false);
+
+    try {
+      localStorage.setItem('selldesk_persona', JSON.stringify(p));
+      localStorage.setItem('selldesk_active_brand', JSON.stringify(b));
+      window.dispatchEvent(new Event('selldesk_tenant_changed'));
+    } catch {}
+  };
+
+  const handlePersonaSwitch = (p: typeof personas[0]) => {
+    changeBrandAndPersona(p, p.allowedBrands[0]);
+  };
+
+  const handleSelectBrand = (b: typeof personas[0]['allowedBrands'][0]) => {
+    changeBrandAndPersona(currentPersona, b);
   };
 
   return (
@@ -127,10 +157,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
               {currentPersona.allowedBrands.map((b) => (
                 <div
                   key={b.id}
-                  onClick={() => {
-                    setActiveBrand(b);
-                    setIsDropdownOpen(false);
-                  }}
+                  onClick={() => handleSelectBrand(b)}
                   style={{
                     padding: '0.625rem 0.75rem',
                     borderRadius: '0.5rem',

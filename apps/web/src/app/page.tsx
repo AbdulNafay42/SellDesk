@@ -18,6 +18,44 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeBrand, setActiveBrand] = useState<{ id: string; name: string; city: string }>({
+    id: 'biz-default',
+    name: 'SellDesk Apparels PK',
+    city: 'Lahore',
+  });
+  const [activeUser, setActiveUser] = useState<{ name: string; role: string }>({
+    name: 'Abdul',
+    role: 'SUPER_ADMIN',
+  });
+
+  const updateTenantState = React.useCallback(() => {
+    try {
+      const savedBrand = localStorage.getItem('selldesk_active_brand');
+      const savedPersona = localStorage.getItem('selldesk_persona');
+      if (savedBrand) {
+        setActiveBrand(JSON.parse(savedBrand));
+      }
+      if (savedPersona) {
+        const p = JSON.parse(savedPersona);
+        const firstName = p.name.split(' ')[0];
+        setActiveUser({ name: firstName, role: p.role });
+      }
+    } catch {}
+  }, []);
+
+  React.useEffect(() => {
+    updateTenantState();
+    window.addEventListener('selldesk_tenant_changed', updateTenantState);
+    return () => window.removeEventListener('selldesk_tenant_changed', updateTenantState);
+  }, [updateTenantState]);
+
+  // Dynamic brand metrics
+  const isKhaadi = activeBrand.id === 'biz-102';
+  const isSapphire = activeBrand.id === 'biz-103';
+
+  const totalSales = isKhaadi ? 'Rs 2,940,000' : isSapphire ? 'Rs 1,450,000' : 'Rs 485,400';
+  const orderCount = isKhaadi ? '842 Orders' : isSapphire ? '420 Orders' : '141 Orders';
+  const pendingCount = isKhaadi ? '48 pending dispatch' : isSapphire ? '22 pending dispatch' : '12 pending confirmation';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
@@ -32,10 +70,10 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>
-              Good afternoon, <span className="gradient-text-whatsapp">Abdul</span> 👋
+              Good afternoon, <span className="gradient-text-whatsapp">{activeUser.name}</span> 👋
             </h1>
             <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
-              Here is what’s happening with <strong style={{ color: '#E5E7EB' }}>UrbanThreads PK</strong> today.
+              Here is what’s happening with <strong style={{ color: '#34D399' }}>{activeBrand.name} ({activeBrand.city})</strong> today.
             </p>
           </div>
 
@@ -62,7 +100,7 @@ export default function DashboardPage() {
                 <TrendingUp style={{ width: '1.125rem', height: '1.125rem', color: '#10B981' }} />
               </div>
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>Rs 142,500</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>{totalSales}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.78rem', color: '#34D399', marginTop: '0.5rem' }}>
               <ArrowUpRight style={{ width: '0.875rem', height: '0.875rem' }} />
               <span>+18.4% from last week</span>
@@ -77,9 +115,9 @@ export default function DashboardPage() {
                 <ShoppingBag style={{ width: '1.125rem', height: '1.125rem', color: '#6366F1' }} />
               </div>
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>34 Orders</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>{orderCount}</div>
             <div style={{ fontSize: '0.78rem', color: '#9CA3AF', marginTop: '0.5rem' }}>
-              12 pending confirmation
+              {pendingCount}
             </div>
           </div>
 
