@@ -13,6 +13,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
 import { ReturnsModule } from './modules/returns/returns.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ReturnsModule } from './modules/returns/returns.module';
     PaymentsModule,
     ShippingModule,
     ReturnsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [],
