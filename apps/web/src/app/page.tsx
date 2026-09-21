@@ -26,6 +26,7 @@ export default function DashboardPage() {
 
       <main style={{
         backgroundColor: '#090D16',
+        width: '100%'
       }} className="animate-fade-in">
         {/* Welcome Section */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
