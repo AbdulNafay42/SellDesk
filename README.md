@@ -63,16 +63,14 @@ PHASE 22 : Public Launch & Scaling
 
 ## 🚀 Vertical Implementation Slices
 
-- **Slice 1**: Auth + Multi-tenant Business Management + Product Catalog
-- **Slice 2**: Customer CRM + Order Management Engine
-- **Slice 3**: Conversation Messaging System
-- **Slice 4**: WhatsApp Cloud API Integration
-- **Slice 5**: AI Intent Classification & Order Parsing
-- **Slice 6**: Guardrailed AI Assistant + Human Approval UI
-- **Slice 7**: Follow-ups + Live Inventory Sync
-- **Slice 8**: Analytics + Payments (COD tracking)
-- **Slice 9**: Courier Shipping Integration + Returns Lifecycle
-- **Slice 10**: SaaS Billing + Team Permissions + Hardening
+- [x] **Slice 1**: Auth + Multi-tenant Business Management + Product Catalog (`/products`)
+- [x] **Slice 2**: Customer CRM (`/customers`) + Order Management Engine (`/orders`)
+- [x] **Slice 3**: Conversation Infrastructure (`/conversations`) + Meta WhatsApp Webhook API
+- [x] **Slice 4**: AI Intent Classification, RAG & Order Extraction Engine (`/ai`)
+- [x] **Slice 5**: Automated Follow-ups & Lead Recovery (`/followups`) + Dynamic Inventory Sync (`/inventory`)
+- [x] **Slice 6**: Business Intelligence Analytics (`/analytics`) + COD Payment Reconciliation Ledger (`/payments`)
+- [x] **Slice 7**: Courier Shipping Integration (`/shipping`) + Reverse Logistics & Returns Lifecycle (`/returns`)
+- [x] **Slice 8**: Team Roles (RBAC), Multi-Tenant SaaS Billing & Store Settings (`/settings`)
 
 ---
 
