@@ -9,6 +9,8 @@ import { ConversationsModule } from './modules/conversations/conversations.modul
 import { AiModule } from './modules/ai/ai.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { FollowupsModule } from './modules/followups/followups.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { FollowupsModule } from './modules/followups/followups.module';
     AiModule,
     InventoryModule,
     FollowupsModule,
+    AnalyticsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [],

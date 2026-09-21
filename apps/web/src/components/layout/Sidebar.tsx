@@ -12,6 +12,7 @@ import {
   Boxes,
   BellRing,
   BarChart3,
+  CreditCard,
   Settings,
   Sparkles,
   ChevronRight,
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Inventory Sync', href: '/inventory', icon: Boxes },
   { name: 'Follow-ups', href: '/followups', icon: BellRing, count: 27 },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Payments Ledger', href: '/payments', icon: CreditCard, count: 2 },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
