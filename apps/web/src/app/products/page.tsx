@@ -10,8 +10,6 @@ import {
   Filter,
   Layers,
   Edit2,
-  Trash2,
-  AlertCircle,
   X,
   CheckCircle,
 } from 'lucide-react';
@@ -84,6 +82,7 @@ const initialProducts: Product[] = [
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   // Form State
@@ -114,7 +113,6 @@ export default function ProductsPage() {
 
     setProducts([newProd, ...products]);
     setIsModalOpen(false);
-    // Reset form
     setName('');
     setDescription('');
   };
@@ -126,83 +124,83 @@ export default function ProductsPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
-      <Sidebar />
-      <Header />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Header onMenuToggle={() => setIsSidebarOpen(true)} />
 
-      <main style={{ marginLeft: '260px', marginTop: '70px', flex: 1, padding: '32px', backgroundColor: '#090D16', minHeight: 'calc(100vh - 70px)' }} className="animate-fade-in">
+      <main style={{ backgroundColor: '#090D16' }} className="animate-fade-in">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>Product Catalog</h1>
-            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '4px' }}>
+            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
               Manage clothing items, sizes, colors, SKUs and live stock inventory.
             </p>
           </div>
 
           <button onClick={() => setIsModalOpen(true)} className="btn-primary">
-            <Plus style={{ width: '18px', height: '18px' }} />
+            <Plus style={{ width: '1.125rem', height: '1.125rem' }} />
             Add New Product
           </button>
         </div>
 
         {/* Search & Filter Bar */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#6B7280' }} />
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '15rem' }}>
+            <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1.125rem', height: '1.125rem', color: '#6B7280' }} />
             <input
               type="text"
               placeholder="Search product by name or SKU..."
               className="input-glass"
-              style={{ paddingLeft: '44px' }}
+              style={{ paddingLeft: '2.75rem' }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <button className="btn-secondary">
-            <Filter style={{ width: '16px', height: '16px' }} />
+            <Filter style={{ width: '1rem', height: '1rem' }} />
             Filter
           </button>
         </div>
 
         {/* Product Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))', gap: '1.5rem' }}>
           {filteredProducts.map((prod) => (
-            <div key={prod.id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={prod.id} className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 {/* Product Image Header */}
-                <div style={{ position: 'relative', height: '180px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px' }}>
+                <div style={{ position: 'relative', height: '11.25rem', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
                   <Image src={prod.imageUrl} alt={prod.name} fill style={{ objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                  <div style={{ position: 'absolute', top: '0.625rem', right: '0.625rem' }}>
                     <span className="badge badge-success">{prod.status}</span>
                   </div>
                 </div>
 
-                <div style={{ fontSize: '0.78rem', color: '#34D399', fontWeight: 700, marginBottom: '4px' }}>{prod.sku}</div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF', marginBottom: '6px' }}>{prod.name}</h3>
-                <p style={{ fontSize: '0.82rem', color: '#9CA3AF', marginBottom: '16px', lineClamp: 2 }}>{prod.description}</p>
+                <div style={{ fontSize: '0.78rem', color: '#34D399', fontWeight: 700, marginBottom: '0.25rem' }}>{prod.sku}</div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF', marginBottom: '0.375rem' }}>{prod.name}</h3>
+                <p style={{ fontSize: '0.82rem', color: '#9CA3AF', marginBottom: '1rem' }}>{prod.description}</p>
 
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFF', marginBottom: '16px' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFF', marginBottom: '1rem' }}>
                   Rs {prod.basePrice.toLocaleString()}
                 </div>
 
                 {/* Variants List */}
-                <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '12px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Layers style={{ width: '14px', height: '14px' }} />
+                <div style={{ borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <Layers style={{ width: '0.875rem', height: '0.875rem' }} />
                     <span>Variants & Stock ({prod.variants.length})</span>
                   </div>
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {prod.variants.map((v, idx) => (
                       <div key={idx} style={{
                         background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        padding: '4px 10px',
-                        borderRadius: '8px',
+                        border: '0.0625rem solid rgba(255, 255, 255, 0.08)',
+                        padding: '0.25rem 0.625rem',
+                        borderRadius: '0.5rem',
                         fontSize: '0.75rem',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px'
+                        gap: '0.375rem'
                       }}>
                         <span style={{ fontWeight: 700, color: '#FFF' }}>{v.size}</span>
                         <span style={{ color: '#9CA3AF' }}>•</span>
@@ -214,9 +212,9 @@ export default function ProductsPage() {
               </div>
 
               {/* Actions Footer */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '14px' }}>
-                <button className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}>
-                  <Edit2 style={{ width: '14px', height: '14px' }} /> Edit
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem', borderTop: '0.0625rem solid rgba(255, 255, 255, 0.06)', paddingTop: '0.875rem' }}>
+                <button className="btn-secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.8rem' }}>
+                  <Edit2 style={{ width: '0.875rem', height: '0.875rem' }} /> Edit
                 </button>
               </div>
             </div>
@@ -229,24 +227,24 @@ export default function ProductsPage() {
             position: 'fixed',
             inset: 0,
             background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(0.5rem)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 50,
-            padding: '20px',
+            padding: '1.25rem',
           }}>
-            <div className="glass-card" style={{ width: '100%', maxWidth: '600px', padding: '28px', background: '#111827' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div className="glass-card" style={{ width: '100%', maxWidth: '37.5rem', padding: '1.75rem', background: '#111827', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFF' }}>Add New Product</h2>
                 <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                  <X style={{ width: '20px', height: '20px' }} />
+                  <X style={{ width: '1.25rem', height: '1.25rem' }} />
                 </button>
               </div>
 
-              <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '6px' }}>Product Name</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '0.375rem' }}>Product Name</label>
                   <input
                     type="text"
                     required
@@ -257,9 +255,9 @@ export default function ProductsPage() {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: '0.875rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '6px' }}>Base Price (PKR)</label>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '0.375rem' }}>Base Price (PKR)</label>
                     <input
                       type="number"
                       required
@@ -269,7 +267,7 @@ export default function ProductsPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '6px' }}>Base SKU</label>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '0.375rem' }}>Base SKU</label>
                     <input
                       type="text"
                       placeholder="SHRT-LIN-001"
@@ -281,7 +279,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '6px' }}>Description</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#D1D5DB', display: 'block', marginBottom: '0.375rem' }}>Description</label>
                   <textarea
                     rows={3}
                     placeholder="Short product description..."
@@ -291,10 +289,10 @@ export default function ProductsPage() {
                   />
                 </div>
 
-                <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '16px' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF', marginBottom: '10px' }}>Variants (Sizes & Initial Stock)</div>
+                <div style={{ borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF', marginBottom: '0.625rem' }}>Variants (Sizes & Initial Stock)</div>
                   {variants.map((v, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem', marginBottom: '0.5rem' }}>
                       <input type="text" className="input-glass" value={v.size} readOnly style={{ fontSize: '0.8rem' }} />
                       <input type="text" className="input-glass" value={v.color} readOnly style={{ fontSize: '0.8rem' }} />
                       <input
@@ -312,12 +310,12 @@ export default function ProductsPage() {
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                   <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary" style={{ flex: 1 }}>
                     Cancel
                   </button>
                   <button type="submit" className="btn-primary" style={{ flex: 1 }}>
-                    <CheckCircle style={{ width: '16px', height: '16px' }} /> Save Product
+                    <CheckCircle style={{ width: '1rem', height: '1rem' }} /> Save Product
                   </button>
                 </div>
               </form>

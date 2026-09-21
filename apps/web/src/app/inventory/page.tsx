@@ -6,12 +6,8 @@ import { Header } from '@/components/layout/Header';
 import {
   Boxes,
   AlertTriangle,
-  ArrowUpRight,
-  ArrowDownLeft,
   Plus,
-  RefreshCw,
   Search,
-  Layers,
   History,
   CheckCircle2,
   X,
@@ -72,6 +68,7 @@ const initialMovements: Movement[] = [
 export default function InventoryPage() {
   const [movements, setMovements] = useState<Movement[]>(initialMovements);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   // Form State
@@ -107,51 +104,51 @@ export default function InventoryPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
-      <Sidebar />
-      <Header />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Header onMenuToggle={() => setIsSidebarOpen(true)} />
 
-      <main style={{ marginLeft: '260px', marginTop: '70px', flex: 1, padding: '32px', backgroundColor: '#090D16', minHeight: 'calc(100vh - 70px)' }} className="animate-fade-in">
+      <main style={{ backgroundColor: '#090D16' }} className="animate-fade-in">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Boxes style={{ width: '24px', height: '24px', color: '#10B981' }} />
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Boxes style={{ width: '1.5rem', height: '1.5rem', color: '#10B981' }} />
               Dynamic Inventory Sync & Audit Log
             </h1>
-            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '4px' }}>
+            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
               Real-time stock decrement on order confirmation, low-stock warnings, and restock tracking.
             </p>
           </div>
 
           <button onClick={() => setIsModalOpen(true)} className="btn-primary">
-            <Plus style={{ width: '18px', height: '18px' }} />
+            <Plus style={{ width: '1.125rem', height: '1.125rem' }} />
             Restock Inventory
           </button>
         </div>
 
         {/* Low Stock Warning Banner */}
-        <div style={{ background: 'rgba(244, 63, 94, 0.12)', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '16px 20px', borderRadius: '14px', marginBottom: '28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <AlertTriangle style={{ width: '22px', height: '22px', color: '#F43F5E' }} />
+        <div style={{ background: 'rgba(244, 63, 94, 0.12)', border: '0.0625rem solid rgba(244, 63, 94, 0.3)', padding: '1rem 1.25rem', borderRadius: '0.875rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <AlertTriangle style={{ width: '1.375rem', height: '1.375rem', color: '#F43F5E' }} />
             <div>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>Low Stock Alert Triggered</div>
               <div style={{ fontSize: '0.8rem', color: '#FDA4AF' }}>Variant <strong>Oversized Black Hoodie (XL)</strong> has only 3 units remaining!</div>
             </div>
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', background: '#F43F5E' }}>
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '0.375rem 0.875rem', fontSize: '0.8rem', background: '#F43F5E' }}>
             Restock Now
           </button>
         </div>
 
         {/* Search Input */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#6B7280' }} />
+            <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1.125rem', height: '1.125rem', color: '#6B7280' }} />
             <input
               type="text"
               placeholder="Search movement by SKU, Product Name, or Order reference..."
               className="input-glass"
-              style={{ paddingLeft: '44px' }}
+              style={{ paddingLeft: '2.75rem' }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -159,68 +156,70 @@ export default function InventoryPage() {
         </div>
 
         {/* Movement Audit Trail Table */}
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
-            <History style={{ width: '18px', height: '18px', color: '#10B981' }} />
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.125rem' }}>
+            <History style={{ width: '1.125rem', height: '1.125rem', color: '#10B981' }} />
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF' }}>Inventory Audit Movement Logs</h2>
           </div>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#6B7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '12px 8px' }}>SKU & Variant</th>
-                <th style={{ padding: '12px 8px' }}>Movement Type</th>
-                <th style={{ padding: '12px 8px' }}>Quantity</th>
-                <th style={{ padding: '12px 8px' }}>Stock Adjustment</th>
-                <th style={{ padding: '12px 8px' }}>Reference</th>
-                <th style={{ padding: '12px 8px' }}>Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMovements.map((mov) => (
-                <tr key={mov.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
-                  <td style={{ padding: '14px 8px' }}>
-                    <div style={{ fontWeight: 800, color: '#34D399' }}>{mov.sku}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#FFF' }}>{mov.productName}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{mov.variantInfo}</div>
-                  </td>
-
-                  <td style={{ padding: '14px 8px' }}>
-                    <span className={mov.quantity > 0 ? 'badge badge-success' : 'badge badge-rose'}>
-                      {mov.type}
-                    </span>
-                  </td>
-
-                  <td style={{ padding: '14px 8px', fontWeight: 800, color: mov.quantity > 0 ? '#34D399' : '#F43F5E' }}>
-                    {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
-                  </td>
-
-                  <td style={{ padding: '14px 8px', color: '#D1D5DB' }}>
-                    {mov.previousStock} ➔ <strong style={{ color: '#FFF' }}>{mov.newStock} units</strong>
-                  </td>
-
-                  <td style={{ padding: '14px 8px', color: '#9CA3AF' }}>{mov.reference}</td>
-                  <td style={{ padding: '14px 8px', color: '#6B7280', fontSize: '0.78rem' }}>{mov.timestamp}</td>
+          <div className="table-responsive-container">
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '40rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)', color: '#6B7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  <th style={{ padding: '0.75rem 0.5rem' }}>SKU & Variant</th>
+                  <th style={{ padding: '0.75rem 0.5rem' }}>Movement Type</th>
+                  <th style={{ padding: '0.75rem 0.5rem' }}>Quantity</th>
+                  <th style={{ padding: '0.75rem 0.5rem' }}>Stock Adjustment</th>
+                  <th style={{ padding: '0.75rem 0.5rem' }}>Reference</th>
+                  <th style={{ padding: '0.75rem 0.5rem' }}>Timestamp</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredMovements.map((mov) => (
+                  <tr key={mov.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
+                    <td style={{ padding: '0.875rem 0.5rem' }}>
+                      <div style={{ fontWeight: 800, color: '#34D399' }}>{mov.sku}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#FFF' }}>{mov.productName}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{mov.variantInfo}</div>
+                    </td>
+
+                    <td style={{ padding: '0.875rem 0.5rem' }}>
+                      <span className={mov.quantity > 0 ? 'badge badge-success' : 'badge badge-rose'}>
+                        {mov.type}
+                      </span>
+                    </td>
+
+                    <td style={{ padding: '0.875rem 0.5rem', fontWeight: 800, color: mov.quantity > 0 ? '#34D399' : '#F43F5E' }}>
+                      {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
+                    </td>
+
+                    <td style={{ padding: '0.875rem 0.5rem', color: '#D1D5DB' }}>
+                      {mov.previousStock} ➔ <strong style={{ color: '#FFF' }}>{mov.newStock} units</strong>
+                    </td>
+
+                    <td style={{ padding: '0.875rem 0.5rem', color: '#9CA3AF' }}>{mov.reference}</td>
+                    <td style={{ padding: '0.875rem 0.5rem', color: '#6B7280', fontSize: '0.78rem' }}>{mov.timestamp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Restock Inventory Modal */}
         {isModalOpen && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}>
-            <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '28px', background: '#111827' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1.25rem' }}>
+            <div className="glass-card" style={{ width: '100%', maxWidth: '31.25rem', padding: '1.75rem', background: '#111827' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#FFF' }}>Restock Inventory Variant</h3>
                 <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                  <X style={{ width: '20px', height: '20px' }} />
+                  <X style={{ width: '1.25rem', height: '1.25rem' }} />
                 </button>
               </div>
 
-              <form onSubmit={handleRestock} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleRestock} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '4px' }}>Select SKU Variant</label>
+                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Select SKU Variant</label>
                   <select className="input-glass" value={sku} onChange={(e) => setSku(e.target.value)}>
                     <option value="HD-BLK-XL">HD-BLK-XL (Black Hoodie XL - 3 units left)</option>
                     <option value="JKT-VNT-M">JKT-VNT-M (Denim Jacket M - 10 units)</option>
@@ -229,21 +228,21 @@ export default function InventoryPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '4px' }}>Add Stock Quantity</label>
+                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Add Stock Quantity</label>
                   <input type="number" required min={1} className="input-glass" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '4px' }}>Restock Reference / Notes</label>
+                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Restock Reference / Notes</label>
                   <input type="text" placeholder="e.g. Supplier Shipment #SS-490" className="input-glass" value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                   <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary" style={{ flex: 1 }}>
                     Cancel
                   </button>
                   <button type="submit" className="btn-primary" style={{ flex: 1 }}>
-                    <CheckCircle2 style={{ width: '16px', height: '16px' }} /> Confirm Restock
+                    <CheckCircle2 style={{ width: '1rem', height: '1rem' }} /> Confirm Restock
                   </button>
                 </div>
               </form>

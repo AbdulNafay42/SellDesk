@@ -6,13 +6,10 @@ import { Header } from '@/components/layout/Header';
 import {
   BellRing,
   Clock,
-  Phone,
   Send,
-  MessageSquare,
   Sparkles,
   CheckCircle2,
   Search,
-  User,
   ShoppingBag,
 } from 'lucide-react';
 
@@ -66,6 +63,7 @@ const initialLeads: Lead[] = [
 
 export default function FollowupsPage() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const handleSendFollowup = (id: string) => {
@@ -81,56 +79,56 @@ export default function FollowupsPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
-      <Sidebar />
-      <Header />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Header onMenuToggle={() => setIsSidebarOpen(true)} />
 
-      <main style={{ marginLeft: '260px', marginTop: '70px', flex: 1, padding: '32px', backgroundColor: '#090D16', minHeight: 'calc(100vh - 70px)' }} className="animate-fade-in">
+      <main style={{ backgroundColor: '#090D16' }} className="animate-fade-in">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem' }}>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <BellRing style={{ width: '24px', height: '24px', color: '#F59E0B' }} />
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <BellRing style={{ width: '1.5rem', height: '1.5rem', color: '#F59E0B' }} />
               Automated Follow-ups & Lead Recovery
             </h1>
-            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '4px' }}>
+            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
               Recover lost sales from WhatsApp inquiries that dropped off before placing an order.
             </p>
           </div>
         </div>
 
         {/* Metric Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '28px' }}>
-          <div className="glass-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))', gap: '1.25rem', marginBottom: '1.75rem' }}>
+          <div className="glass-card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Pending Lead Recovery</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FBBF24', marginTop: '4px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FBBF24', marginTop: '0.25rem' }}>
               {leads.filter((l) => l.status === 'PENDING').length} Inactive Inquiries
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '20px' }}>
+          <div className="glass-card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Follow-up Reminders Sent</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34D399', marginTop: '4px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34D399', marginTop: '0.25rem' }}>
               {leads.filter((l) => l.status === 'SENT').length} Reminders Sent
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '20px' }}>
+          <div className="glass-card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Conversion Rate</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#818CF8', marginTop: '4px' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#818CF8', marginTop: '0.25rem' }}>
               28.4% Recovered
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#6B7280' }} />
+            <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1.125rem', height: '1.125rem', color: '#6B7280' }} />
             <input
               type="text"
               placeholder="Search leads by customer name, phone, or product..."
               className="input-glass"
-              style={{ paddingLeft: '44px' }}
+              style={{ paddingLeft: '2.75rem' }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -138,31 +136,31 @@ export default function FollowupsPage() {
         </div>
 
         {/* Lead Recovery Cards List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {filteredLeads.map((lead) => (
-            <div key={lead.id} className="glass-card" style={{ padding: '22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ flex: 1, paddingRight: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock style={{ width: '12px', height: '12px' }} /> Inactive for {lead.hoursElapsed}h
+            <div key={lead.id} className="glass-card" style={{ padding: '1.375rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ flex: 1, minWidth: '16rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                  <span className="badge badge-warning" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock style={{ width: '0.75rem', height: '0.75rem' }} /> Inactive for {lead.hoursElapsed}h
                   </span>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFF' }}>{lead.customerName}</h3>
                   <span style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 600 }}>({lead.customerPhone})</span>
                   <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>• {lead.city}</span>
                 </div>
 
-                <div style={{ fontSize: '0.85rem', color: '#E5E7EB', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <ShoppingBag style={{ width: '14px', height: '14px', color: '#10B981' }} />
+                <div style={{ fontSize: '0.85rem', color: '#E5E7EB', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <ShoppingBag style={{ width: '0.875rem', height: '0.875rem', color: '#10B981' }} />
                   <span>Inquired Item: <strong>{lead.inquiredProduct}</strong></span>
                 </div>
 
-                <div style={{ fontSize: '0.8rem', color: '#9CA3AF', fontStyle: 'italic', marginBottom: '12px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#9CA3AF', fontStyle: 'italic', marginBottom: '0.75rem' }}>
                   Last Message: &ldquo;{lead.lastMessage}&rdquo;
                 </div>
 
-                <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '12px', borderRadius: '10px', fontSize: '0.8rem', color: '#A5B4FC' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, marginBottom: '4px' }}>
-                    <Sparkles style={{ width: '14px', height: '14px', color: '#818CF8' }} /> AI Suggested Follow-up Text:
+                <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '0.0625rem solid rgba(99, 102, 241, 0.25)', padding: '0.75rem', borderRadius: '0.625rem', fontSize: '0.8rem', color: '#A5B4FC' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+                    <Sparkles style={{ width: '0.875rem', height: '0.875rem', color: '#818CF8' }} /> AI Suggested Follow-up Text:
                   </div>
                   &ldquo;{lead.suggestedFollowup}&rdquo;
                 </div>
@@ -171,13 +169,13 @@ export default function FollowupsPage() {
               {/* Action Button */}
               <div>
                 {lead.status === 'PENDING' ? (
-                  <button onClick={() => handleSendFollowup(lead.id)} className="btn-primary" style={{ whiteSpace: 'nowrap', padding: '12px 20px' }}>
-                    <Send style={{ width: '16px', height: '16px' }} />
+                  <button onClick={() => handleSendFollowup(lead.id)} className="btn-primary" style={{ whiteSpace: 'nowrap', padding: '0.75rem 1.25rem' }}>
+                    <Send style={{ width: '1rem', height: '1rem' }} />
                     1-Click Send WhatsApp Follow-up
                   </button>
                 ) : (
-                  <span className="badge badge-success" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                    <CheckCircle2 style={{ width: '14px', height: '14px' }} /> Follow-up Sent
+                  <span className="badge badge-success" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                    <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem' }} /> Follow-up Sent
                   </span>
                 )}
               </div>

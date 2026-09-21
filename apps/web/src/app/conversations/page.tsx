@@ -12,10 +12,7 @@ import {
   Sparkles,
   ShoppingBag,
   CheckCheck,
-  Clock,
-  User,
   CheckCircle2,
-  Plus,
   X,
 } from 'lucide-react';
 
@@ -97,6 +94,7 @@ export default function ConversationsPage() {
   const [replyText, setReplyText] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [isOrderModalOpen, setIsOrderModalOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
 
@@ -149,32 +147,38 @@ export default function ConversationsPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex' }}>
-      <Sidebar />
-      <Header />
+    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Header onMenuToggle={() => setIsSidebarOpen(true)} />
 
-      <main style={{ marginLeft: '260px', marginTop: '70px', flex: 1, height: 'calc(100vh - 70px)', display: 'flex' }}>
+      <main style={{
+        backgroundColor: '#090D16',
+        padding: 0,
+        height: 'calc(100vh - 4.375rem)',
+        display: 'flex',
+        overflow: 'hidden',
+      }} className="animate-fade-in chat-layout-responsive">
         {/* Left Panel: Conversations Thread List */}
-        <div style={{ width: '340px', borderRight: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(11, 15, 25, 0.6)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFF', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MessageSquare style={{ width: '18px', height: '18px', color: '#10B981' }} />
+        <div style={{ width: '21.25rem', borderRight: '0.0625rem solid rgba(255, 255, 255, 0.08)', background: 'rgba(11, 15, 25, 0.6)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '1rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.06)' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFF', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <MessageSquare style={{ width: '1.125rem', height: '1.125rem', color: '#10B981' }} />
               WhatsApp Inbox
             </h2>
             <div style={{ position: 'relative' }}>
-              <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', color: '#6B7280' }} />
+              <Search style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: '#6B7280' }} />
               <input
                 type="text"
                 placeholder="Search chat or phone..."
                 className="input-glass"
-                style={{ paddingLeft: '32px', fontSize: '0.8rem' }}
+                style={{ paddingLeft: '2rem', fontSize: '0.8rem' }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
             {filteredConversations.map((conv) => {
               const isSelected = conv.id === activeConvId;
               return (
@@ -182,26 +186,26 @@ export default function ConversationsPage() {
                   key={conv.id}
                   onClick={() => setActiveConvId(conv.id)}
                   style={{
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    marginBottom: '6px',
+                    padding: '0.75rem 0.875rem',
+                    borderRadius: '0.75rem',
+                    marginBottom: '0.375rem',
                     cursor: 'pointer',
                     background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                    border: isSelected ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent',
+                    border: isSelected ? '0.0625rem solid rgba(16, 185, 129, 0.3)' : '0.0625rem solid transparent',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                     <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#FFF' }}>{conv.customerName}</span>
                     <span style={{ fontSize: '0.7rem', color: '#6B7280' }}>{conv.lastMessageTime}</span>
                   </div>
 
-                  <div style={{ fontSize: '0.78rem', color: '#9CA3AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#9CA3AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '0.375rem' }}>
                     {conv.lastMessage}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span className={`badge ${getIntentBadge(conv.intentTag)}`} style={{ fontSize: '0.62rem', padding: '2px 6px' }}>
+                    <span className={`badge ${getIntentBadge(conv.intentTag)}`} style={{ fontSize: '0.62rem', padding: '0.125rem 0.375rem' }}>
                       {conv.intentTag}
                     </span>
                     <span style={{ fontSize: '0.72rem', color: '#34D399', fontWeight: 600 }}>{conv.customerPhone}</span>
@@ -215,34 +219,34 @@ export default function ConversationsPage() {
         {/* Center Panel: Active WhatsApp Chat Thread */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'rgba(9, 13, 22, 0.4)' }}>
           {/* Active Chat Header */}
-          <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(17, 24, 39, 0.6)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#FFF' }}>
+          <div style={{ padding: '1rem 1.5rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(17, 24, 39, 0.6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#FFF' }}>
                 {activeConv.customerName.substring(0, 2).toUpperCase()}
               </div>
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>{activeConv.customerName}</h3>
-                <p style={{ fontSize: '0.78rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Phone style={{ width: '12px', height: '12px' }} /> {activeConv.customerPhone} • {activeConv.city}
+                <p style={{ fontSize: '0.78rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Phone style={{ width: '0.75rem', height: '0.75rem' }} /> {activeConv.customerPhone} • {activeConv.city}
                 </p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <button onClick={() => setIsOrderModalOpen(true)} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem' }}>
-                <ShoppingBag style={{ width: '14px', height: '14px' }} /> Convert Chat to Order
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <button onClick={() => setIsOrderModalOpen(true)} className="btn-primary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem' }}>
+                <ShoppingBag style={{ width: '0.875rem', height: '0.875rem' }} /> Convert Chat to Order
               </button>
             </div>
           </div>
 
           {/* Messages Thread Body */}
-          <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
             {activeConv.messages.map((msg) => {
               if (msg.isAiExtraction) {
                 return (
-                  <div key={msg.id} style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '14px', alignSelf: 'center', maxWidth: '85%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, color: '#34D399', marginBottom: '4px' }}>
-                      <Sparkles style={{ width: '14px', height: '14px' }} /> AI INTENT ENGINE HIGHLIGHT
+                  <div key={msg.id} style={{ background: 'rgba(16, 185, 129, 0.1)', border: '0.0625rem solid rgba(16, 185, 129, 0.3)', borderRadius: '0.75rem', padding: '0.875rem', alignSelf: 'center', maxWidth: '85%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 800, color: '#34D399', marginBottom: '0.25rem' }}>
+                      <Sparkles style={{ width: '0.875rem', height: '0.875rem' }} /> AI INTENT ENGINE HIGHLIGHT
                     </div>
                     <div style={{ fontSize: '0.85rem', color: '#FFF', fontWeight: 600 }}>{msg.text}</div>
                   </div>
@@ -258,21 +262,21 @@ export default function ConversationsPage() {
                     maxWidth: '70%',
                     background: isMe ? 'linear-gradient(135deg, #059669 0%, #10B981 100%)' : 'rgba(31, 41, 55, 0.8)',
                     color: '#FFF',
-                    padding: '10px 14px',
-                    borderRadius: isMe ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    padding: '0.625rem 0.875rem',
+                    borderRadius: isMe ? '1rem 1rem 0.125rem 1rem' : '1rem 1rem 1rem 0.125rem',
+                    border: '0.0625rem solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 0.25rem 0.75rem rgba(0,0,0,0.15)',
                   }}
                 >
                   {msg.sender === 'AI_ASSISTANT' && (
-                    <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Sparkles style={{ width: '10px', height: '10px' }} /> AI Auto-Response
+                    <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.8, marginBottom: '0.125rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Sparkles style={{ width: '0.625rem', height: '0.625rem' }} /> AI Auto-Response
                     </div>
                   )}
                   <div style={{ fontSize: '0.88rem', lineHeight: '1.4' }}>{msg.text}</div>
-                  <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: '4px', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                  <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: '0.25rem', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
                     <span>{msg.time}</span>
-                    <CheckCheck style={{ width: '12px', height: '12px' }} />
+                    <CheckCheck style={{ width: '0.75rem', height: '0.75rem' }} />
                   </div>
                 </div>
               );
@@ -280,7 +284,7 @@ export default function ConversationsPage() {
           </div>
 
           {/* Reply Composer Bar */}
-          <form onSubmit={handleSendReply} style={{ padding: '16px 24px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '12px', background: 'rgba(17, 24, 39, 0.8)' }}>
+          <form onSubmit={handleSendReply} style={{ padding: '1rem 1.5rem', borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '0.75rem', background: 'rgba(17, 24, 39, 0.8)' }}>
             <input
               type="text"
               placeholder="Type your WhatsApp reply..."
@@ -289,40 +293,40 @@ export default function ConversationsPage() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
             />
-            <button type="submit" className="btn-primary" style={{ padding: '0 20px' }}>
-              <Send style={{ width: '16px', height: '16px' }} /> Send
+            <button type="submit" className="btn-primary" style={{ padding: '0 1.25rem' }}>
+              <Send style={{ width: '1rem', height: '1rem' }} /> Send
             </button>
           </form>
         </div>
 
         {/* Right Panel: Customer Quick Summary */}
-        <div style={{ width: '280px', borderLeft: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(11, 15, 25, 0.6)', padding: '20px' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.05em', marginBottom: '16px' }}>
+        <div className="search-hide-mobile" style={{ width: '17.5rem', borderLeft: '0.0625rem solid rgba(255, 255, 255, 0.08)', background: 'rgba(11, 15, 25, 0.6)', padding: '1.25rem' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.05em', marginBottom: '1rem' }}>
             Customer Intelligence
           </div>
 
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.3rem', color: '#FFF', marginBottom: '8px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+            <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.3rem', color: '#FFF', marginBottom: '0.5rem' }}>
               {activeConv.customerName.substring(0, 2).toUpperCase()}
             </div>
             <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFF' }}>{activeConv.customerName}</h4>
             <p style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{activeConv.customerPhone}</p>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '16px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.75rem', padding: '0.875rem', border: '0.0625rem solid rgba(255, 255, 255, 0.06)', marginBottom: '1rem' }}>
             <div style={{ fontSize: '0.7rem', color: '#6B7280', textTransform: 'uppercase' }}>AI Intent Tag</div>
-            <div style={{ marginTop: '4px' }}>
+            <div style={{ marginTop: '0.25rem' }}>
               <span className={`badge ${getIntentBadge(activeConv.intentTag)}`}>{activeConv.intentTag}</span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.375rem' }}>
               Confidence Score: {(activeConv.intentConfidence * 100).toFixed(0)}%
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <div style={{ fontSize: '0.7rem', color: '#6B7280', textTransform: 'uppercase', marginBottom: '4px' }}>Delivery Address</div>
-            <div style={{ fontSize: '0.8rem', color: '#E5E7EB', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-              <MapPin style={{ width: '14px', height: '14px', color: '#10B981', marginTop: '2px' }} />
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.75rem', padding: '0.875rem', border: '0.0625rem solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ fontSize: '0.7rem', color: '#6B7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Delivery Address</div>
+            <div style={{ fontSize: '0.8rem', color: '#E5E7EB', display: 'flex', alignItems: 'flex-start', gap: '0.375rem' }}>
+              <MapPin style={{ width: '0.875rem', height: '0.875rem', color: '#10B981', marginTop: '0.125rem' }} />
               <span>{activeConv.city}</span>
             </div>
           </div>
@@ -330,37 +334,37 @@ export default function ConversationsPage() {
 
         {/* Quick Order Creation Modal */}
         {isOrderModalOpen && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}>
-            <div className="glass-card" style={{ width: '100%', maxWidth: '500px', padding: '24px', background: '#111827' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1.25rem' }}>
+            <div className="glass-card" style={{ width: '100%', maxWidth: '31.25rem', padding: '1.5rem', background: '#111827' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF' }}>Convert Chat to Order</h3>
                 <button onClick={() => setIsOrderModalOpen(false)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
-                  <X style={{ width: '18px', height: '18px' }} />
+                  <X style={{ width: '1.125rem', height: '1.125rem' }} />
                 </button>
               </div>
 
-              <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)', marginBottom: '16px', fontSize: '0.8rem', color: '#34D399' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.75rem', borderRadius: '0.625rem', border: '0.0625rem solid rgba(16, 185, 129, 0.2)', marginBottom: '1rem', fontSize: '0.8rem', color: '#34D399' }}>
                 Pre-filled from WhatsApp chat with <strong>{activeConv.customerName}</strong> ({activeConv.customerPhone})
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.78rem', color: '#D1D5DB', display: 'block', marginBottom: '4px' }}>Product Item</label>
+                  <label style={{ fontSize: '0.78rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Product Item</label>
                   <input type="text" className="input-glass" readOnly value="Oversized Black Premium Hoodie (XL) x 2" />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.78rem', color: '#D1D5DB', display: 'block', marginBottom: '4px' }}>City</label>
+                    <label style={{ fontSize: '0.78rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>City</label>
                     <input type="text" className="input-glass" readOnly value={activeConv.city} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.78rem', color: '#D1D5DB', display: 'block', marginBottom: '4px' }}>Total Amount</label>
+                    <label style={{ fontSize: '0.78rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Total Amount</label>
                     <input type="text" className="input-glass" readOnly value="Rs 9,248 (COD)" />
                   </div>
                 </div>
 
-                <button onClick={() => setIsOrderModalOpen(false)} className="btn-primary" style={{ marginTop: '8px' }}>
-                  <CheckCircle2 style={{ width: '16px', height: '16px' }} /> Confirm & Generate Order
+                <button onClick={() => setIsOrderModalOpen(false)} className="btn-primary" style={{ marginTop: '0.5rem' }}>
+                  <CheckCircle2 style={{ width: '1rem', height: '1rem' }} /> Confirm & Generate Order
                 </button>
               </div>
             </div>

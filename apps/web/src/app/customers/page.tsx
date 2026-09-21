@@ -8,13 +8,7 @@ import {
   Search,
   Phone,
   MapPin,
-  ShoppingBag,
-  TrendingUp,
-  RotateCcw,
   Clock,
-  Sparkles,
-  ChevronRight,
-  UserCheck,
 } from 'lucide-react';
 
 interface Customer {
@@ -85,6 +79,7 @@ export default function CustomersPage() {
   const [customers] = useState<Customer[]>(initialCustomers);
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(initialCustomers[0]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const filteredCustomers = customers.filter(
     (c) =>
@@ -95,29 +90,29 @@ export default function CustomersPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
-      <Sidebar />
-      <Header />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Header onMenuToggle={() => setIsSidebarOpen(true)} />
 
-      <main style={{ marginLeft: '260px', marginTop: '70px', flex: 1, padding: '32px', backgroundColor: '#090D16', minHeight: 'calc(100vh - 70px)' }} className="animate-fade-in">
+      <main style={{ backgroundColor: '#090D16' }} className="animate-fade-in">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem' }}>
           <div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>Customer CRM Directory</h1>
-            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '4px' }}>
+            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
               Track customer repeat purchases, lifetime value (LTV) in PKR, and order delivery histories.
             </p>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#6B7280' }} />
+            <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1.125rem', height: '1.125rem', color: '#6B7280' }} />
             <input
               type="text"
               placeholder="Search customer by name, phone 03xx..., or city..."
               className="input-glass"
-              style={{ paddingLeft: '44px' }}
+              style={{ paddingLeft: '2.75rem' }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -125,9 +120,9 @@ export default function CustomersPage() {
         </div>
 
         {/* Main Grid: Directory & Customer Details Timeline */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '24px' }}>
+        <div className="grid-2col-responsive" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '1.5rem' }}>
           {/* Customer Cards List */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))', gap: '1rem' }}>
             {filteredCustomers.map((cust) => {
               const isSelected = selectedCustomer?.id === cust.id;
               return (
@@ -136,25 +131,25 @@ export default function CustomersPage() {
                   onClick={() => setSelectedCustomer(cust)}
                   className="glass-card"
                   style={{
-                    padding: '20px',
+                    padding: '1.25rem',
                     cursor: 'pointer',
                     borderColor: isSelected ? '#10B981' : undefined,
-                    background: isSelected ? 'rgba(16, 185, 129, 0.08)' : undefined,
+                    background: isSelected ? 'rgba(16, 185, 129, 0.12)' : undefined,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#FFF' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#FFF' }}>
                       {cust.fullName.substring(0, 2).toUpperCase()}
                     </div>
                     <span className="badge badge-indigo" style={{ fontSize: '0.65rem' }}>{cust.city}</span>
                   </div>
 
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFF', marginBottom: '4px' }}>{cust.fullName}</h3>
-                  <div style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '12px' }}>
-                    <Phone style={{ width: '13px', height: '13px' }} /> {cust.phoneNumber}
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFF', marginBottom: '0.25rem' }}>{cust.fullName}</h3>
+                  <div style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.75rem' }}>
+                    <Phone style={{ width: '0.8125rem', height: '0.8125rem' }} /> {cust.phoneNumber}
                   </div>
 
-                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                  <div style={{ borderTop: '0.0625rem solid rgba(255, 255, 255, 0.06)', paddingTop: '0.625rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
                     <div>
                       <div style={{ color: '#6B7280', fontSize: '0.7rem', textTransform: 'uppercase' }}>Total Spent</div>
                       <div style={{ fontWeight: 800, color: '#FFF' }}>Rs {cust.totalSpent.toLocaleString()}</div>
@@ -171,9 +166,9 @@ export default function CustomersPage() {
 
           {/* Customer Profile & Timeline View */}
           {selectedCustomer && (
-            <div className="glass-card" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', color: '#FFF' }}>
+            <div className="glass-card" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ width: '3.25rem', height: '3.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', color: '#FFF' }}>
                   {selectedCustomer.fullName.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -183,42 +178,42 @@ export default function CustomersPage() {
               </div>
 
               {/* Delivery & Return Ratio Metrics */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.875rem', borderRadius: '0.75rem', border: '0.0625rem solid rgba(16, 185, 129, 0.2)' }}>
                   <div style={{ fontSize: '0.72rem', color: '#34D399', fontWeight: 700, textTransform: 'uppercase' }}>Delivered Orders</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '4px' }}>{selectedCustomer.deliveredOrders}</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>{selectedCustomer.deliveredOrders}</div>
                 </div>
-                <div style={{ background: 'rgba(244, 63, 94, 0.1)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                <div style={{ background: 'rgba(244, 63, 94, 0.1)', padding: '0.875rem', borderRadius: '0.75rem', border: '0.0625rem solid rgba(244, 63, 94, 0.2)' }}>
                   <div style={{ fontSize: '0.72rem', color: '#FDA4AF', fontWeight: 700, textTransform: 'uppercase' }}>Returns / Cancelled</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '4px' }}>{selectedCustomer.returnedOrders}</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>{selectedCustomer.returnedOrders}</div>
                 </div>
               </div>
 
               {/* Shipping Address */}
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <MapPin style={{ width: '14px', height: '14px' }} /> Shipping Address
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <MapPin style={{ width: '0.875rem', height: '0.875rem' }} /> Shipping Address
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#E5E7EB', background: 'rgba(255, 255, 255, 0.03)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ fontSize: '0.85rem', color: '#E5E7EB', background: 'rgba(255, 255, 255, 0.03)', padding: '0.75rem', borderRadius: '0.625rem', border: '0.0625rem solid rgba(255, 255, 255, 0.06)' }}>
                   {selectedCustomer.address}, {selectedCustomer.city}
                 </div>
               </div>
 
               {/* Customer Timeline Activity */}
               <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Clock style={{ width: '16px', height: '16px', color: '#10B981' }} /> Customer History Timeline
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <Clock style={{ width: '1rem', height: '1rem', color: '#10B981' }} /> Customer History Timeline
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '2px solid rgba(255, 255, 255, 0.08)', paddingLeft: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '0.125rem solid rgba(255, 255, 255, 0.08)', paddingLeft: '1rem' }}>
                   <div style={{ position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: '-22px', top: '2px', width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }} />
+                    <div style={{ position: 'absolute', left: '-1.375rem', top: '0.125rem', width: '0.625rem', height: '0.625rem', borderRadius: '50%', background: '#10B981' }} />
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#FFF' }}>Ordered Oversized Black Hoodie (XL)</div>
                     <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>Amount: Rs 4,749 (COD) • {selectedCustomer.lastOrdered}</div>
                   </div>
 
                   <div style={{ position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: '-22px', top: '2px', width: '10px', height: '10px', borderRadius: '50%', background: '#6366F1' }} />
+                    <div style={{ position: 'absolute', left: '-1.375rem', top: '0.125rem', width: '0.625rem', height: '0.625rem', borderRadius: '50%', background: '#6366F1' }} />
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#FFF' }}>Inquired via WhatsApp for XL Stock</div>
                     <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>AI Intent extracted: AVAILABILITY</div>
                   </div>
