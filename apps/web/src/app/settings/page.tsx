@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -63,25 +65,50 @@ const initialTeam: TeamMember[] = [
 ];
 
 export default function SettingsPage() {
+  const { activeBusinessId } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'team' | 'billing'>('profile');
 
   // Business profile form state
-  const [bizName, setBizName] = useState('SellDesk Apparels PK');
+  const [bizName, setBizName] = useState('');
   const [category, setCategory] = useState('Instagram Apparel & Clothing Store');
-  const [whatsapp, setWhatsapp] = useState('+92 300 1234567');
-  const [city, setCity] = useState('Lahore');
-  const [address, setAddress] = useState('Al-Hafeez Executive Tower, Gulberg III, Lahore');
-  const [taxId, setTaxId] = useState('NTN-8822019-4');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [city, setCity] = useState('');
+  const [address, setAddress] = useState('');
+  const [taxId, setTaxId] = useState('');
 
   // Team state & invite modal
-  const [team, setTeam] = useState<TeamMember[]>(initialTeam);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER'>('SALES_AGENT');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSettings = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const profile = await api.get<any>('/api/settings/business');
+        if (isMounted && profile) {
+          setBizName(profile.name || '');
+          setWhatsapp(profile.phone || '');
+          setCity(profile.city || '');
+          setAddress(profile.address || '');
+        }
+        const teamData = await api.get<TeamMember[]>('/api/settings/team');
+        if (isMounted && Array.isArray(teamData)) {
+          setTeam(teamData);
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    };
+    fetchSettings();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +167,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Tab Selection Navigation */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.75rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', pb: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.75rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.75rem' }}>
           <button
             onClick={() => setActiveTab('profile')}
             style={{
@@ -286,35 +313,43 @@ export default function SettingsPage() {
 
             <div className="glass-card" style={{ padding: '1.5rem' }}>
               <div className="table-responsive-container">
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
-                      <th style={{ padding: '0.75rem 1rem' }}>Team Member</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Assigned RBAC Role</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Joined Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {team.map((mem) => (
-                      <tr key={mem.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
-                        <td style={{ padding: '1rem' }}>
-                          <div style={{ fontWeight: 700, color: '#FFF' }}>{mem.name}</div>
-                          <div style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>{mem.email}</div>
-                        </td>
-                        <td style={{ padding: '1rem' }}>{getRoleBadge(mem.role)}</td>
-                        <td style={{ padding: '1rem' }}>
-                          {mem.status === 'ACTIVE' ? (
-                            <span className="badge badge-success">Active</span>
-                          ) : (
-                            <span className="badge badge-warning">Invitation Sent</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '1rem', color: '#9CA3AF', fontSize: '0.8rem' }}>{mem.joinedDate}</td>
+                {team.length === 0 ? (
+                  <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                    <Users style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 0.75rem auto', color: '#4B5563' }} />
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>0 Team Members</div>
+                    <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>No additional team members invited yet.</div>
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
+                        <th style={{ padding: '0.75rem 1rem' }}>Team Member</th>
+                        <th style={{ padding: '0.75rem 1rem' }}>Assigned RBAC Role</th>
+                        <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                        <th style={{ padding: '0.75rem 1rem' }}>Joined Date</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {team.map((mem) => (
+                        <tr key={mem.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ fontWeight: 700, color: '#FFF' }}>{mem.name}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>{mem.email}</div>
+                          </td>
+                          <td style={{ padding: '1rem' }}>{getRoleBadge(mem.role)}</td>
+                          <td style={{ padding: '1rem' }}>
+                            {mem.status === 'ACTIVE' ? (
+                              <span className="badge badge-success">Active</span>
+                            ) : (
+                              <span className="badge badge-warning">Invitation Sent</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '1rem', color: '#9CA3AF', fontSize: '0.8rem' }}>{mem.joinedDate}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>

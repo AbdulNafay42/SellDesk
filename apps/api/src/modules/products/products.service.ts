@@ -142,7 +142,7 @@ export class ProductsService {
 
     const newProd = {
       id: `prod-${Date.now()}`,
-      businessId: dto.businessId || 'biz-default',
+      businessId: dto.businessId,
       name: dto.name,
       description: dto.description || '',
       basePrice: dto.basePrice,

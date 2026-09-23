@@ -127,7 +127,7 @@ export class CustomersService {
 
     const newCust = {
       id: `cust-${Date.now()}`,
-      businessId: dto.businessId || 'biz-default',
+      businessId: dto.businessId,
       fullName: dto.fullName,
       phoneNumber: dto.phoneNumber,
       city: dto.city || 'Lahore',

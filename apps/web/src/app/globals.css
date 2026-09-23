@@ -300,3 +300,84 @@ h1, h2, h3, h4, h5, h6 {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   LANDING PAGE DESIGN SYSTEM TOKENS & 2.5D OPERATIONAL STAGE UTILITIES
+   ========================================================================== */
+
+.landing-grid-bg {
+  background-color: #090D16;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.15), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 80% 60%, rgba(99, 102, 241, 0.12), transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 2.5rem 2.5rem, 2.5rem 2.5rem;
+}
+
+.hero-perspective {
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+.hero-3d-stage {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-node-card {
+  background: rgba(17, 24, 39, 0.9);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.875rem;
+  box-shadow: 0 0.875rem 2.5rem rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(0.75rem);
+  transition: all 0.3s ease;
+}
+
+.hero-node-card:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, 0.8), 0 0 1.25rem rgba(16, 185, 129, 0.2);
+}
+
+.landing-nav-link {
+  color: #9CA3AF;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.landing-nav-link:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@keyframes pulsePacket {
+  0% { offset-distance: 0%; opacity: 0.2; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0.2; }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: floatGentle 5s ease-in-out infinite;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-float,
+  .hero-3d-stage {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+

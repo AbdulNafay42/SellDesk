@@ -13,6 +13,7 @@ export class InventoryService {
   private mockMovements = [
     {
       id: 'mov-1',
+      businessId: 'biz-default',
       sku: 'HD-BLK-XL',
       productName: 'Oversized Black Premium Hoodie',
       variantInfo: 'Size: XL • Color: Black',
@@ -25,6 +26,7 @@ export class InventoryService {
     },
     {
       id: 'mov-2',
+      businessId: 'biz-default',
       sku: 'JKT-VNT-M',
       productName: 'Vintage Wash Denim Jacket',
       variantInfo: 'Size: M • Color: Blue Wash',
@@ -37,6 +39,7 @@ export class InventoryService {
     },
     {
       id: 'mov-3',
+      businessId: 'biz-default',
       sku: 'TS-WHT-S',
       productName: 'Minimalist Essential White Tee',
       variantInfo: 'Size: S • Color: White',
@@ -50,12 +53,13 @@ export class InventoryService {
   ];
 
   async getMovements(businessId: string) {
-    return this.mockMovements;
+    return this.mockMovements.filter((m) => m.businessId === businessId);
   }
 
-  async recordMovement(dto: StockMovementDto) {
+  async recordMovement(dto: StockMovementDto & { businessId?: string }) {
     const newMovement = {
       id: `mov-${Date.now()}`,
+      businessId: dto.businessId || 'biz-default',
       sku: dto.sku,
       productName: 'Restocked Clothing Item',
       variantInfo: 'Size: Standard',

@@ -35,6 +35,14 @@ export class TenantGuard implements CanActivate {
       );
     }
 
+    // Verify Business Approval Status (Only APPROVED is allowed; PENDING, REJECTED, SUSPENDED blocked)
+    const status = membership.businessStatus;
+    if (!status || status !== 'APPROVED') {
+      throw new ForbiddenException(
+        `Access denied. Business/tenant ${membership.targetBusinessId} is ${status || 'UNAPPROVED'}. Access is restricted to APPROVED businesses only.`,
+      );
+    }
+
     // Attach verified tenant information to request context
     request.tenantId = membership.targetBusinessId;
     request.tenantRole = membership.role;

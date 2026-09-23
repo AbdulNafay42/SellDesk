@@ -73,17 +73,26 @@ export class ConversationsService {
         });
       }
     } catch {}
-    return this.mockConversations;
+    return this.mockConversations.filter((c) => c.businessId === businessId);
   }
 
   async findOne(id: string, businessId: string) {
-    const found = this.mockConversations.find((c) => c.id === id);
+    try {
+      if (this.prisma && (this.prisma as any)['conversation']) {
+        const conv = await (this.prisma as any)['conversation'].findFirst({
+          where: { id, businessId },
+        });
+        if (conv) return conv;
+      }
+    } catch {}
+
+    const found = this.mockConversations.find((c) => c.id === id && c.businessId === businessId);
     if (!found) throw new NotFoundException('Conversation thread not found');
     return found;
   }
 
-  async sendReply(dto: SendReplyDto) {
-    const conv = this.mockConversations.find((c) => c.id === dto.conversationId);
+  async sendReply(dto: SendReplyDto, businessId?: string) {
+    const conv = this.mockConversations.find((c) => c.id === dto.conversationId && (!businessId || c.businessId === businessId));
     if (!conv) throw new NotFoundException('Conversation not found');
 
     const newMsg = {

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthProvider } from '../context/AuthContext';
+import { ClientAuthGuard } from '../components/layout/ClientAuthGuard';
 
 export const metadata: Metadata = {
   title: 'SellDesk — WhatsApp Commerce Management Platform',
@@ -13,7 +15,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          <ClientAuthGuard>{children}</ClientAuthGuard>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

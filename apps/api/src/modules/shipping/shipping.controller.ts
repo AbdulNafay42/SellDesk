@@ -1,22 +1,25 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { ShippingService, Consignment } from './shipping.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 
 @Controller('shipping')
+@UseGuards(JwtAuthGuard, TenantGuard)
 export class ShippingController {
   constructor(private readonly shippingService: ShippingService) {}
 
   @Get()
-  findAll(): Consignment[] {
-    return this.shippingService.findAll();
+  async findAll(@Req() req: any): Promise<Consignment[]> {
+    return this.shippingService.findAll(req.tenantId);
   }
 
   @Get(':cnNumber')
-  findByCn(@Param('cnNumber') cnNumber: string): Consignment {
-    return this.shippingService.findByCn(cnNumber);
+  async findByCn(@Param('cnNumber') cnNumber: string, @Req() req: any): Promise<Consignment> {
+    return this.shippingService.findByCn(cnNumber, req.tenantId);
   }
 
   @Post('book')
-  bookConsignment(
+  async bookConsignment(
     @Body()
     body: {
       courier: 'TRAX' | 'LEOPARD' | 'CALLCOURIER' | 'TCS';
@@ -29,7 +32,8 @@ export class ShippingController {
       weightKg?: number;
       pieces?: number;
     },
-  ): Consignment {
-    return this.shippingService.bookConsignment(body);
+    @Req() req: any,
+  ): Promise<Consignment> {
+    return this.shippingService.bookConsignment(body, req.tenantId);
   }
 }

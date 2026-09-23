@@ -75,17 +75,41 @@ const initialCustomers: Customer[] = [
   },
 ];
 
+import { useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+
 export default function CustomersPage() {
-  const [customers] = useState<Customer[]>(initialCustomers);
+  const { activeBusinessId } = useAuth();
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(initialCustomers[0]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCustomers = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<Customer[]>('/api/customers');
+        if (isMounted) {
+          const list = Array.isArray(data) ? data : [];
+          setCustomers(list);
+          setSelectedCustomer(list[0] || null);
+        }
+      } catch (err) {
+        console.error('Failed to load customers:', err);
+      }
+    };
+    loadCustomers();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
 
   const filteredCustomers = customers.filter(
     (c) =>
-      c.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      c.phoneNumber.includes(search) ||
-      c.city.toLowerCase().includes(search.toLowerCase())
+      (c.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.phoneNumber || '').includes(search) ||
+      (c.city || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -120,7 +144,16 @@ export default function CustomersPage() {
         </div>
 
         {/* Main Grid: Directory & Customer Details Timeline */}
-        <div className="grid-2col-responsive" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '1.5rem' }}>
+        {filteredCustomers.length === 0 ? (
+          <div className="glass-card" style={{ padding: '3rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+            <Users style={{ width: '3rem', height: '3rem', margin: '0 auto 0.875rem auto', color: '#4B5563' }} />
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF' }}>0 Customers</div>
+            <div style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '0.25rem' }}>
+              No customer records found for this business.
+            </div>
+          </div>
+        ) : (
+          <div className="grid-2col-responsive" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '1.5rem' }}>
           {/* Customer Cards List */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))', gap: '1rem' }}>
             {filteredCustomers.map((cust) => {
@@ -222,6 +255,7 @@ export default function CustomersPage() {
             </div>
           )}
         </div>
+        )}
       </main>
     </div>
   );

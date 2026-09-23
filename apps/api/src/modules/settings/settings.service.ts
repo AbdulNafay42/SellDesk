@@ -38,85 +38,69 @@ export interface SubscriptionBilling {
 
 @Injectable()
 export class SettingsService {
-  private business: BusinessProfile = {
-    id: 'biz-default',
-    name: 'SellDesk Apparels PK',
-    category: 'Instagram Apparel & Clothing Store',
-    whatsappNumber: '+92 300 1234567',
-    currency: 'PKR',
-    city: 'Lahore',
-    address: 'Al-Hafeez Executive Tower, Gulberg III, Lahore',
-    taxNumber: 'NTN-8822019-4',
+  private businessStore: Record<string, BusinessProfile> = {
+    'biz-default': {
+      id: 'biz-default',
+      name: 'SellDesk Apparels PK',
+      category: 'Instagram Apparel & Clothing Store',
+      whatsappNumber: '+92 300 1234567',
+      currency: 'PKR',
+      city: 'Lahore',
+      address: 'Al-Hafeez Executive Tower, Gulberg III, Lahore',
+      taxNumber: 'NTN-8822019-4',
+    },
   };
 
-  private team: TeamMember[] = [
-    {
-      id: 'usr-1',
-      name: 'Abdul Nafay',
-      email: 'abdulnafay2005@gmail.com',
-      role: 'OWNER',
-      status: 'ACTIVE',
-      joinedDate: '2026-08-01',
-    },
-    {
-      id: 'usr-2',
-      name: 'Usman Ghani',
-      email: 'usman.sales@selldesk.pk',
-      role: 'SALES_AGENT',
-      status: 'ACTIVE',
-      joinedDate: '2026-08-15',
-    },
-    {
-      id: 'usr-3',
-      name: 'Hassan Raza',
-      email: 'hassan.inv@selldesk.pk',
-      role: 'INVENTORY_MANAGER',
-      status: 'ACTIVE',
-      joinedDate: '2026-09-02',
-    },
-    {
-      id: 'usr-4',
-      name: 'Zahra Fatima',
-      email: 'zahra.support@selldesk.pk',
-      role: 'SALES_AGENT',
-      status: 'INVITED',
-      joinedDate: '2026-09-20',
-    },
-  ];
-
-  private billing: SubscriptionBilling = {
-    currentPlan: 'GROWTH',
-    monthlyFeePKR: 6999,
-    billingCycle: 'Monthly (Auto-renew)',
-    nextBillingDate: '2026-10-01',
-    usageMeters: {
-      ordersThisMonth: 141,
-      maxOrders: 1000,
-      teamMembersCount: 4,
-      maxTeamMembers: 10,
-      aiResponsesUsed: 412,
-      maxAiResponses: 5000,
-    },
-    invoices: [
-      { id: 'INV-2026-09', date: '2026-09-01', amountPKR: 6999, status: 'PAID', pdfUrl: '/invoices/INV-2026-09.pdf' },
-      { id: 'INV-2026-08', date: '2026-08-01', amountPKR: 6999, status: 'PAID', pdfUrl: '/invoices/INV-2026-08.pdf' },
+  private teamStore: Record<string, TeamMember[]> = {
+    'biz-default': [
+      {
+        id: 'usr-1',
+        name: 'Abdul Nafay',
+        email: 'abdulnafay2005@gmail.com',
+        role: 'OWNER',
+        status: 'ACTIVE',
+        joinedDate: '2026-08-01',
+      },
+      {
+        id: 'usr-2',
+        name: 'Usman Ghani',
+        email: 'usman.sales@selldesk.pk',
+        role: 'SALES_AGENT',
+        status: 'ACTIVE',
+        joinedDate: '2026-08-15',
+      },
     ],
   };
 
-  getBusiness(): BusinessProfile {
-    return this.business;
+  getBusiness(businessId: string): BusinessProfile {
+    if (!this.businessStore[businessId]) {
+      this.businessStore[businessId] = {
+        id: businessId,
+        name: 'My Apparel Business',
+        category: 'Apparel & Clothing Store',
+        whatsappNumber: '+92 300 0000000',
+        currency: 'PKR',
+        city: 'Lahore',
+        address: 'Warehouse Hub Address, Pakistan',
+      };
+    }
+    return this.businessStore[businessId];
   }
 
-  updateBusiness(dto: Partial<BusinessProfile>): BusinessProfile {
-    this.business = { ...this.business, ...dto };
-    return this.business;
+  updateBusiness(dto: Partial<BusinessProfile>, businessId: string): BusinessProfile {
+    const current = this.getBusiness(businessId);
+    this.businessStore[businessId] = { ...current, ...dto, id: businessId };
+    return this.businessStore[businessId];
   }
 
-  getTeam(): TeamMember[] {
-    return this.team;
+  getTeam(businessId: string): TeamMember[] {
+    return this.teamStore[businessId] || [];
   }
 
-  inviteTeamMember(dto: { name: string; email: string; role: 'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER' }): TeamMember {
+  inviteTeamMember(
+    dto: { name: string; email: string; role: 'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER' },
+    businessId: string,
+  ): TeamMember {
     const newMember: TeamMember = {
       id: `usr-${Date.now()}`,
       name: dto.name,
@@ -125,11 +109,48 @@ export class SettingsService {
       status: 'INVITED',
       joinedDate: new Date().toISOString().split('T')[0],
     };
-    this.team.push(newMember);
+    if (!this.teamStore[businessId]) {
+      this.teamStore[businessId] = [];
+    }
+    this.teamStore[businessId].push(newMember);
     return newMember;
   }
 
-  getBilling(): SubscriptionBilling {
-    return this.billing;
+  getBilling(businessId: string): SubscriptionBilling {
+    if (businessId === 'biz-default') {
+      return {
+        currentPlan: 'GROWTH',
+        monthlyFeePKR: 6999,
+        billingCycle: 'Monthly (Auto-renew)',
+        nextBillingDate: '2026-10-01',
+        usageMeters: {
+          ordersThisMonth: 141,
+          maxOrders: 1000,
+          teamMembersCount: 4,
+          maxTeamMembers: 10,
+          aiResponsesUsed: 412,
+          maxAiResponses: 5000,
+        },
+        invoices: [
+          { id: 'INV-2026-09', date: '2026-09-01', amountPKR: 6999, status: 'PAID', pdfUrl: '/invoices/INV-2026-09.pdf' },
+        ],
+      };
+    }
+
+    return {
+      currentPlan: 'STARTER',
+      monthlyFeePKR: 2999,
+      billingCycle: 'Monthly',
+      nextBillingDate: '2026-10-01',
+      usageMeters: {
+        ordersThisMonth: 0,
+        maxOrders: 250,
+        teamMembersCount: (this.teamStore[businessId] || []).length || 1,
+        maxTeamMembers: 3,
+        aiResponsesUsed: 0,
+        maxAiResponses: 1000,
+      },
+      invoices: [],
+    };
   }
 }

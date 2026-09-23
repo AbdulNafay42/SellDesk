@@ -1,17 +1,36 @@
-import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { AdminService, ClientTenantBrand, PlatformMetrics } from './admin.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SuperAdminGuard } from './guards/super-admin.guard';
+import { RejectBusinessDto } from './dto/reject-business.dto';
 
 @Controller('admin')
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @Get('pending-businesses')
+  async getPendingBusinesses() {
+    return this.adminService.getPendingBusinesses();
+  }
+
+  @Patch('businesses/:id/approve')
+  async approveBusiness(@Param('id') id: string) {
+    return this.adminService.approveBusiness(id);
+  }
+
+  @Patch('businesses/:id/reject')
+  async rejectBusiness(@Param('id') id: string, @Body() dto: RejectBusinessDto) {
+    return this.adminService.rejectBusiness(id, dto.reason);
+  }
+
   @Get('metrics')
-  getMetrics(): PlatformMetrics {
+  async getMetrics(): Promise<PlatformMetrics> {
     return this.adminService.getMetrics();
   }
 
   @Get('tenants')
-  getTenants(): ClientTenantBrand[] {
+  async getTenants(): Promise<ClientTenantBrand[]> {
     return this.adminService.getTenants();
   }
 
@@ -31,7 +50,8 @@ export class AdminController {
   }
 
   @Patch('tenants/:id/status')
-  toggleStatus(@Param('id') id: string): ClientTenantBrand {
+  async toggleStatus(@Param('id') id: string): Promise<ClientTenantBrand> {
     return this.adminService.toggleStatus(id);
   }
 }
+

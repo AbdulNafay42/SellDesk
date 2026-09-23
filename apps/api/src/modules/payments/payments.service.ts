@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 export interface PaymentRecord {
   id: string;
+  businessId?: string;
   orderNumber: string;
   customerName: string;
   customerPhone: string;
@@ -18,6 +19,7 @@ export class PaymentsService {
   private payments: PaymentRecord[] = [
     {
       id: 'pay-101',
+      businessId: 'biz-default',
       orderNumber: 'ORD-1089',
       customerName: 'Hamza Tariq',
       customerPhone: '0312-7788990',
@@ -29,6 +31,7 @@ export class PaymentsService {
     },
     {
       id: 'pay-102',
+      businessId: 'biz-default',
       orderNumber: 'ORD-1090',
       customerName: 'Sana Malik',
       customerPhone: '0301-4455667',
@@ -41,6 +44,7 @@ export class PaymentsService {
     },
     {
       id: 'pay-103',
+      businessId: 'biz-default',
       orderNumber: 'ORD-1091',
       customerName: 'Bilal Ahmed',
       customerPhone: '0346-1122334',
@@ -53,6 +57,7 @@ export class PaymentsService {
     },
     {
       id: 'pay-104',
+      businessId: 'biz-default',
       orderNumber: 'ORD-1092',
       customerName: 'Ayesha Khan',
       customerPhone: '0300-9988776',
@@ -65,6 +70,7 @@ export class PaymentsService {
     },
     {
       id: 'pay-105',
+      businessId: 'biz-default',
       orderNumber: 'ORD-1082',
       customerName: 'Zubair Raza',
       customerPhone: '0333-2211443',
@@ -76,12 +82,12 @@ export class PaymentsService {
     },
   ];
 
-  findAll(): PaymentRecord[] {
-    return this.payments;
+  findAll(businessId: string): PaymentRecord[] {
+    return this.payments.filter((p) => p.businessId === businessId);
   }
 
-  verifyPayment(id: string, trxId?: string): PaymentRecord {
-    const payment = this.payments.find((p) => p.id === id);
+  verifyPayment(id: string, trxId?: string, businessId?: string): PaymentRecord {
+    const payment = this.payments.find((p) => p.id === id && (!businessId || p.businessId === businessId));
     if (!payment) {
       throw new NotFoundException(`Payment record #${id} not found`);
     }

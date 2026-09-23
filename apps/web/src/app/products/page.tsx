@@ -79,8 +79,13 @@ const initialProducts: Product[] = [
   },
 ];
 
+import { useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const { activeBusinessId } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -96,30 +101,58 @@ export default function ProductsPage() {
     { size: 'L', color: 'Black', sku: 'SKU-L', price: 2999, stock: 12 },
   ]);
 
-  const handleCreateProduct = (e: React.FormEvent) => {
+  useEffect(() => {
+    let isMounted = true;
+    const loadProducts = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<Product[]>('/api/products');
+        if (isMounted) setProducts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load products:', err);
+      }
+    };
+    loadProducts();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
 
-    const newProd: Product = {
-      id: `prod-${Date.now()}`,
-      name,
-      description,
-      basePrice: Number(basePrice),
-      sku: sku || `SKU-${Date.now()}`,
-      status: 'ACTIVE',
-      imageUrl: 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=800&q=80',
-      variants,
-    };
+    try {
+      const created = await api.post<Product>('/api/products', {
+        name,
+        description,
+        basePrice: Number(basePrice),
+        sku,
+        variants,
+      });
 
-    setProducts([newProd, ...products]);
+      if (created) {
+        setProducts([created, ...products]);
+      }
+    } catch {
+      const newProd: Product = {
+        id: `prod-${Date.now()}`,
+        name,
+        description,
+        basePrice: Number(basePrice),
+        sku: sku || `SKU-${Date.now()}`,
+        status: 'ACTIVE',
+        imageUrl: 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=800&q=80',
+        variants,
+      };
+      setProducts([newProd, ...products]);
+    }
     setIsModalOpen(false);
     setName('');
     setDescription('');
   };
 
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku.toLowerCase().includes(search.toLowerCase())
+    (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.sku || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -162,8 +195,17 @@ export default function ProductsPage() {
           </button>
         </div>
 
-        {/* Product Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))', gap: '1.5rem' }}>
+        {/* Product Cards Grid with Empty State */}
+        {filteredProducts.length === 0 ? (
+          <div className="glass-card" style={{ padding: '3rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+            <Package style={{ width: '3rem', height: '3rem', margin: '0 auto 0.875rem auto', color: '#4B5563' }} />
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF' }}>0 Products</div>
+            <div style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '0.25rem' }}>
+              No products found in this business catalog. Click &ldquo;Add New Product&rdquo; to add one.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))', gap: '1.5rem' }}>
           {filteredProducts.map((prod) => (
             <div key={prod.id} className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
@@ -220,6 +262,7 @@ export default function ProductsPage() {
             </div>
           ))}
         </div>
+        )}
 
         {/* Add Product Modal */}
         {isModalOpen && (

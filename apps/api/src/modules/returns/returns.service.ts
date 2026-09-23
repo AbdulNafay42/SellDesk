@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 export interface ReturnRequest {
   id: string;
+  businessId?: string;
   returnNumber: string;
   orderNumber: string;
   customerName: string;
@@ -20,6 +21,7 @@ export class ReturnsService {
   private returns: ReturnRequest[] = [
     {
       id: 'ret-101',
+      businessId: 'biz-default',
       returnNumber: 'RET-8801',
       orderNumber: 'ORD-1077',
       customerName: 'Zubair Raza',
@@ -34,6 +36,7 @@ export class ReturnsService {
     },
     {
       id: 'ret-102',
+      businessId: 'biz-default',
       returnNumber: 'RET-8802',
       orderNumber: 'ORD-1065',
       customerName: 'Kashif Ali',
@@ -48,6 +51,7 @@ export class ReturnsService {
     },
     {
       id: 'ret-103',
+      businessId: 'biz-default',
       returnNumber: 'RET-8803',
       orderNumber: 'ORD-1085',
       customerName: 'Mariam Sohail',
@@ -62,12 +66,12 @@ export class ReturnsService {
     },
   ];
 
-  findAll(): ReturnRequest[] {
-    return this.returns;
+  findAll(businessId: string): ReturnRequest[] {
+    return this.returns.filter((r) => r.businessId === businessId);
   }
 
-  restockReturn(id: string): ReturnRequest {
-    const ret = this.returns.find((r) => r.id === id);
+  restockReturn(id: string, businessId?: string): ReturnRequest {
+    const ret = this.returns.find((r) => r.id === id && (!businessId || r.businessId === businessId));
     if (!ret) {
       throw new NotFoundException(`Return request #${id} not found`);
     }

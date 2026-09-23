@@ -13,6 +13,18 @@ enum Role {
   STAFF
 }
 
+enum BusinessStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+  USER
+}
+
 enum ProductStatus {
   DRAFT
   ACTIVE
@@ -37,32 +49,101 @@ enum PaymentStatus {
   FAILED
 }
 
+enum ConversationChannel {
+  WHATSAPP
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  OTHER
+}
+
+enum MessageStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  SENT
+}
+
 model User {
   id            String           @id @default(uuid())
   email         String           @unique
   passwordHash  String
   fullName      String
   phoneNumber   String?
+  platformRole  PlatformRole     @default(USER)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   memberships   BusinessMember[]
+  invitations   InvitationToken[]
 }
 
 model Business {
-  id           String           @id @default(uuid())
-  name         String
-  slug         String           @unique
-  currency     String           @default("PKR")
-  phone        String?
-  city         String?
-  country      String           @default("Pakistan")
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  status          BusinessStatus   @default(PENDING)
+  rejectionReason String?
+  approvedAt      DateTime?
+  currency        String           @default("PKR")
+  phone           String?
+  city            String?
+  country         String           @default("Pakistan")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  members      BusinessMember[]
-  products     Product[]
-  customers    Customer[]
-  orders       Order[]
+  members         BusinessMember[]
+  invitations     InvitationToken[]
+  products        Product[]
+  customers       Customer[]
+  orders          Order[]
+  whatsAppConfig  WhatsAppConfig?
+  conversations   Conversation[]
+  messages        Message[]
+}
+
+model WhatsAppConfig {
+  id                 String   @id @default(uuid())
+  businessId         String   @unique
+  phoneNumberId      String   @unique
+  wabaId             String?
+  accessToken        String
+  verifyToken        String?
+  displayPhoneNumber String?
+  verifiedName       String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumberId])
+}
+
+model InvitationToken {
+  id          String    @id @default(uuid())
+  token       String    @unique
+  email       String
+  userId      String?
+  businessId  String
+  role        Role      @default(OWNER)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 model BusinessMember {
@@ -131,8 +212,9 @@ model Customer {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  orders      Order[]
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  conversations Conversation[]
 
   @@index([businessId, phoneNumber])
 }
@@ -156,4 +238,44 @@ model Order {
   customer      Customer      @relation(fields: [customerId], references: [id])
 
   @@index([businessId])
+}
+
+model Conversation {
+  id                  String              @id @default(uuid())
+  businessId          String
+  customerId          String
+  channel             ConversationChannel @default(WHATSAPP)
+  externalContactId   String
+  status              ConversationStatus  @default(OPEN)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  business            Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer            Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  messages            Message[]
+
+  @@unique([businessId, channel, externalContactId])
+  @@index([businessId])
+  @@index([customerId])
+}
+
+model Message {
+  id                  String           @id @default(uuid())
+  businessId          String
+  conversationId      String
+  externalMessageId   String?
+  direction           MessageDirection
+  type                MessageType      @default(TEXT)
+  text                String?
+  status              MessageStatus    @default(RECEIVED)
+  externalTimestamp   DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  business            Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  conversation        Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, externalMessageId])
+  @@index([businessId])
+  @@index([conversationId])
 }

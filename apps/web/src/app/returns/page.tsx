@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -76,9 +78,25 @@ const initialReturns: ReturnRequest[] = [
 ];
 
 export default function ReturnsPage() {
-  const [returns, setReturns] = useState<ReturnRequest[]>(initialReturns);
+  const { activeBusinessId } = useAuth();
+  const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchReturns = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<ReturnRequest[]>('/api/returns');
+        if (isMounted) setReturns(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load returns:', err);
+      }
+    };
+    fetchReturns();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
 
   const handleRestock = (id: string) => {
     setReturns((prev) =>
@@ -174,19 +192,26 @@ export default function ReturnsPage() {
         {/* Returns Table */}
         <div className="glass-card" style={{ padding: '1.5rem' }}>
           <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Return # & Order</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Customer</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Product Item</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Return Reason</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReturns.map((ret) => (
+            {filteredReturns.length === 0 ? (
+              <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                <RotateCcw style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 0.75rem auto', color: '#4B5563' }} />
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>0 Return Requests</div>
+                <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>No reverse logistics or return requests found for this business.</div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
+                    <th style={{ padding: '0.75rem 1rem' }}>Return # & Order</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Customer</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Product Item</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Return Reason</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReturns.map((ret) => (
                   <tr key={ret.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ fontWeight: 800, color: '#FFF', fontFamily: 'monospace' }}>{ret.returnNumber}</div>
@@ -223,6 +248,7 @@ export default function ReturnsPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </div>
       </main>

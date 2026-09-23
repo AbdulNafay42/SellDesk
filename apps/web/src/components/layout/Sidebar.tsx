@@ -21,9 +21,10 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Conversations', href: '/conversations', icon: MessageSquare, badge: 'WhatsApp' },
   { name: 'AI Engine', href: '/ai', icon: Sparkles, badge: 'RAG' },
   { name: 'Orders', href: '/orders', icon: ShoppingBag, count: 12 },
@@ -46,23 +47,17 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [userRole, setUserRole] = React.useState<string>('SUPER_ADMIN');
+  const { user } = useAuth();
+  const isSuperAdmin = user?.platformRole === 'SUPER_ADMIN';
 
-  const updateRole = React.useCallback(() => {
-    try {
-      const savedPersona = localStorage.getItem('selldesk_persona');
-      if (savedPersona) {
-        const parsed = JSON.parse(savedPersona);
-        setUserRole(parsed.role || 'SUPER_ADMIN');
-      }
-    } catch {}
-  }, []);
-
-  React.useEffect(() => {
-    updateRole();
-    window.addEventListener('selldesk_tenant_changed', updateRole);
-    return () => window.removeEventListener('selldesk_tenant_changed', updateRole);
-  }, [updateRole]);
+  const userInitials = user?.fullName
+    ? user.fullName
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : 'SD';
 
   return (
     <>
@@ -137,46 +132,46 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             Main Menu
           </div>
           {navigation
-            .filter((item) => userRole === 'SUPER_ADMIN' || item.href !== '/admin')
+            .filter((item) => isSuperAdmin || item.href !== '/admin')
             .map((item) => {
               const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={onClose}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.625rem 0.875rem',
-                  borderRadius: '0.625rem',
-                  marginBottom: '0.25rem',
-                  fontSize: '0.875rem',
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive ? '#FFFFFF' : '#9CA3AF',
-                  background: isActive ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)' : 'transparent',
-                  borderLeft: isActive ? '0.1875rem solid #10B981' : '0.1875rem solid transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Icon style={{ width: '1.125rem', height: '1.125rem', color: isActive ? '#34D399' : '#6B7280' }} />
-                  <span>{item.name}</span>
-                </div>
-                {item.badge && (
-                  <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '0.125rem 0.375rem' }}>{item.badge}</span>
-                )}
-                {item.count && (
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(255, 255, 255, 0.1)', color: '#D1D5DB', padding: '0.125rem 0.5rem', borderRadius: '999px' }}>
-                    {item.count}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={onClose}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.625rem 0.875rem',
+                    borderRadius: '0.625rem',
+                    marginBottom: '0.25rem',
+                    fontSize: '0.875rem',
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? '#FFFFFF' : '#9CA3AF',
+                    background: isActive ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)' : 'transparent',
+                    borderLeft: isActive ? '0.1875rem solid #10B981' : '0.1875rem solid transparent',
+                    textDecoration: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Icon style={{ width: '1.125rem', height: '1.125rem', color: isActive ? '#34D399' : '#6B7280' }} />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '0.125rem 0.375rem' }}>{item.badge}</span>
+                  )}
+                  {item.count && (
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(255, 255, 255, 0.1)', color: '#D1D5DB', padding: '0.125rem 0.5rem', borderRadius: '999px' }}>
+                      {item.count}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Seller Account Footprint */}
@@ -184,11 +179,11 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
               <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem' }}>
-                AN
+                {userInitials}
               </div>
               <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#FFF' }}>Abdul Nafay</div>
-                <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>abdulnafay2005@gmail.com</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#FFF' }}>{user?.fullName || 'Seller Account'}</div>
+                <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{user?.email || ''}</div>
               </div>
             </div>
             <ChevronRight style={{ width: '1rem', height: '1rem', color: '#6B7280' }} />

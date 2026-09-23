@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -99,8 +99,13 @@ const initialOrders: Order[] = [
   },
 ];
 
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const { activeBusinessId } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,34 +121,71 @@ export default function OrdersPage() {
   const [totalAmount, setTotalAmount] = useState(4499);
   const [paymentMethod, setPaymentMethod] = useState('COD');
 
-  const handleStatusChange = (id: string, nextStatus: string) => {
+  useEffect(() => {
+    let isMounted = true;
+    const loadOrders = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<Order[]>('/api/orders');
+        if (isMounted) setOrders(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load orders:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    loadOrders();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
+
+  const handleStatusChange = async (id: string, nextStatus: string) => {
+    try {
+      await api.patch(`/api/orders/${id}/status`, { status: nextStatus }).catch(() => null);
+    } catch { }
     setOrders((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: nextStatus } : o))
     );
   };
 
-  const handleCreateOrder = (e: React.FormEvent) => {
+  const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone) return;
 
-    const newOrd: Order = {
-      id: `ord-${Date.now()}`,
-      orderNumber: `#ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      customerName,
-      customerPhone,
-      city,
-      address,
-      productName,
-      variantInfo,
-      quantity: 1,
-      totalAmount: totalAmount + 250,
-      paymentMethod,
-      paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
-      status: 'NEW',
-      createdAt: 'Just now',
-    };
+    try {
+      const created = await api.post<Order>('/api/orders', {
+        customerName,
+        customerPhone,
+        city,
+        address,
+        productName,
+        variantInfo,
+        quantity: 1,
+        totalAmount,
+        paymentMethod,
+      });
 
-    setOrders([newOrd, ...orders]);
+      if (created) {
+        setOrders([created, ...orders]);
+      }
+    } catch {
+      const newOrd: Order = {
+        id: `ord-${Date.now()}`,
+        orderNumber: `#ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName,
+        customerPhone,
+        city,
+        address,
+        productName,
+        variantInfo,
+        quantity: 1,
+        totalAmount: totalAmount + 250,
+        paymentMethod,
+        paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
+        status: 'NEW',
+        createdAt: 'Just now',
+      };
+      setOrders([newOrd, ...orders]);
+    }
     setIsModalOpen(false);
     setCustomerName('');
     setCustomerPhone('');
@@ -239,78 +281,88 @@ export default function OrdersPage() {
         {/* Orders Table Card with Mobile Scroll Wrapper */}
         <div className="glass-card" style={{ padding: '1.5rem' }}>
           <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '40rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)', color: '#6B7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '0.75rem 0.625rem' }}>Order #</th>
-                  <th style={{ padding: '0.75rem 0.625rem' }}>Customer & Shipping</th>
-                  <th style={{ padding: '0.75rem 0.625rem' }}>Product & Variant</th>
-                  <th style={{ padding: '0.75rem 0.625rem' }}>Payment</th>
-                  <th style={{ padding: '0.75rem 0.625rem' }}>Status</th>
-                  <th style={{ padding: '0.75rem 0.625rem' }}>Action Workflow</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.map((ord) => (
-                  <tr key={ord.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
-                    <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 800, color: '#34D399', fontSize: '0.95rem' }}>{ord.orderNumber}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '0.25rem' }}>{ord.createdAt}</div>
-                    </td>
-
-                    <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 700, color: '#FFF' }}>{ord.customerName}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.125rem' }}>
-                        <Phone style={{ width: '0.75rem', height: '0.75rem' }} /> {ord.customerPhone}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.125rem' }}>
-                        <MapPin style={{ width: '0.75rem', height: '0.75rem' }} /> {ord.city} — {ord.address}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 600, color: '#E5E7EB' }}>{ord.productName}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#9CA3AF', marginTop: '0.125rem' }}>{ord.variantInfo}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.125rem' }}>Qty: {ord.quantity}</div>
-                    </td>
-
-                    <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 800, color: '#FFF', fontSize: '1rem' }}>Rs {ord.totalAmount.toLocaleString()}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600, marginTop: '0.125rem' }}>{ord.paymentMethod}</div>
-                    </td>
-
-                    <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                      <span className={`badge ${getStatusBadge(ord.status)}`}>{ord.status}</span>
-                    </td>
-
-                    <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                        {ord.status === 'NEW' && (
-                          <button onClick={() => handleStatusChange(ord.id, 'CONFIRMED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-                            <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Confirm
-                          </button>
-                        )}
-                        {ord.status === 'CONFIRMED' && (
-                          <button onClick={() => handleStatusChange(ord.id, 'PACKED')} className="btn-secondary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', color: '#FBBF24' }}>
-                            <PackageCheck style={{ width: '0.75rem', height: '0.75rem' }} /> Pack Order
-                          </button>
-                        )}
-                        {ord.status === 'PACKED' && (
-                          <button onClick={() => handleStatusChange(ord.id, 'SHIPPED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-                            <Truck style={{ width: '0.75rem', height: '0.75rem' }} /> Ship Courier
-                          </button>
-                        )}
-                        {ord.status === 'SHIPPED' && (
-                          <button onClick={() => handleStatusChange(ord.id, 'DELIVERED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-                            <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Mark Delivered
-                          </button>
-                        )}
-                      </div>
-                    </td>
+            {filteredOrders.length === 0 ? (
+              <div style={{ padding: '3rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                <ShoppingBag style={{ width: '3rem', height: '3rem', margin: '0 auto 0.875rem auto', color: '#4B5563' }} />
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF' }}>0 Orders</div>
+                <div style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                  No orders found for this business. Click &ldquo;Create Manual Order&rdquo; to add one.
+                </div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '40rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)', color: '#6B7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '0.75rem 0.625rem' }}>Order #</th>
+                    <th style={{ padding: '0.75rem 0.625rem' }}>Customer & Shipping</th>
+                    <th style={{ padding: '0.75rem 0.625rem' }}>Product & Variant</th>
+                    <th style={{ padding: '0.75rem 0.625rem' }}>Payment</th>
+                    <th style={{ padding: '0.75rem 0.625rem' }}>Status</th>
+                    <th style={{ padding: '0.75rem 0.625rem' }}>Action Workflow</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((ord) => (
+                    <tr key={ord.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
+                        <div style={{ fontWeight: 800, color: '#34D399', fontSize: '0.95rem' }}>{ord.orderNumber}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#6B7280', marginTop: '0.25rem' }}>{ord.createdAt}</div>
+                      </td>
+
+                      <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
+                        <div style={{ fontWeight: 700, color: '#FFF' }}>{ord.customerName}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.125rem' }}>
+                          <Phone style={{ width: '0.75rem', height: '0.75rem' }} /> {ord.customerPhone}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.125rem' }}>
+                          <MapPin style={{ width: '0.75rem', height: '0.75rem' }} /> {ord.city} — {ord.address}
+                        </div>
+                      </td>
+
+                      <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
+                        <div style={{ fontWeight: 600, color: '#E5E7EB' }}>{ord.productName}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#9CA3AF', marginTop: '0.125rem' }}>{ord.variantInfo}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.125rem' }}>Qty: {ord.quantity}</div>
+                      </td>
+
+                      <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
+                        <div style={{ fontWeight: 800, color: '#FFF', fontSize: '1rem' }}>Rs {ord.totalAmount.toLocaleString()}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600, marginTop: '0.125rem' }}>{ord.paymentMethod}</div>
+                      </td>
+
+                      <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
+                        <span className={`badge ${getStatusBadge(ord.status)}`}>{ord.status}</span>
+                      </td>
+
+                      <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                          {ord.status === 'NEW' && (
+                            <button onClick={() => handleStatusChange(ord.id, 'CONFIRMED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                              <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Confirm
+                            </button>
+                          )}
+                          {ord.status === 'CONFIRMED' && (
+                            <button onClick={() => handleStatusChange(ord.id, 'PACKED')} className="btn-secondary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', color: '#FBBF24' }}>
+                              <PackageCheck style={{ width: '0.75rem', height: '0.75rem' }} /> Pack Order
+                            </button>
+                          )}
+                          {ord.status === 'PACKED' && (
+                            <button onClick={() => handleStatusChange(ord.id, 'SHIPPED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                              <Truck style={{ width: '0.75rem', height: '0.75rem' }} /> Ship Courier
+                            </button>
+                          )}
+                          {ord.status === 'SHIPPED' && (
+                            <button onClick={() => handleStatusChange(ord.id, 'DELIVERED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                              <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Mark Delivered
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

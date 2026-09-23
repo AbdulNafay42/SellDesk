@@ -65,8 +65,13 @@ const initialMovements: Movement[] = [
   },
 ];
 
+import { useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+
 export default function InventoryPage() {
-  const [movements, setMovements] = useState<Movement[]>(initialMovements);
+  const { activeBusinessId } = useAuth();
+  const [movements, setMovements] = useState<Movement[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -76,30 +81,56 @@ export default function InventoryPage() {
   const [quantity, setQuantity] = useState(10);
   const [notes, setNotes] = useState('New shipment arrived');
 
-  const handleRestock = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newMov: Movement = {
-      id: `mov-${Date.now()}`,
-      sku,
-      productName: 'Oversized Black Premium Hoodie',
-      variantInfo: 'Size: XL • Color: Black',
-      type: 'INBOUND_RESTOCK',
-      quantity: Number(quantity),
-      previousStock: 3,
-      newStock: 3 + Number(quantity),
-      reference: notes || 'Manual Restock',
-      timestamp: 'Just now',
+  useEffect(() => {
+    let isMounted = true;
+    const loadMovements = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<Movement[]>('/api/inventory/movements');
+        if (isMounted) setMovements(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load inventory movements:', err);
+      }
     };
+    loadMovements();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
 
-    setMovements([newMov, ...movements]);
+  const handleRestock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const created = await api.post<Movement>('/api/inventory/movements', {
+        sku,
+        quantity: Number(quantity),
+        type: 'INBOUND_RESTOCK',
+        notes,
+      });
+      if (created) {
+        setMovements([created, ...movements]);
+      }
+    } catch {
+      const newMov: Movement = {
+        id: `mov-${Date.now()}`,
+        sku,
+        productName: 'Restocked Clothing Item',
+        variantInfo: 'Size: Standard',
+        type: 'INBOUND_RESTOCK',
+        quantity: Number(quantity),
+        previousStock: 0,
+        newStock: Number(quantity),
+        reference: notes || 'Manual Restock',
+        timestamp: 'Just now',
+      };
+      setMovements([newMov, ...movements]);
+    }
     setIsModalOpen(false);
   };
 
   const filteredMovements = movements.filter(
     (m) =>
-      m.sku.toLowerCase().includes(search.toLowerCase()) ||
-      m.productName.toLowerCase().includes(search.toLowerCase()) ||
-      m.reference.toLowerCase().includes(search.toLowerCase())
+      (m.sku || '').toLowerCase().includes(search.toLowerCase()) ||
+      (m.productName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (m.reference || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -163,19 +194,28 @@ export default function InventoryPage() {
           </div>
 
           <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '40rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)', color: '#6B7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>SKU & Variant</th>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>Movement Type</th>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>Quantity</th>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>Stock Adjustment</th>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>Reference</th>
-                  <th style={{ padding: '0.75rem 0.5rem' }}>Timestamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMovements.map((mov) => (
+            {filteredMovements.length === 0 ? (
+              <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                <Boxes style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 0.75rem auto', color: '#4B5563' }} />
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>0 Stock Movements</div>
+                <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>
+                  No inventory movements recorded yet.
+                </div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '40rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)', color: '#6B7280', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>SKU & Variant</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Movement Type</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Quantity</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Stock Adjustment</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Reference</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMovements.map((mov) => (
                   <tr key={mov.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
                     <td style={{ padding: '0.875rem 0.5rem' }}>
                       <div style={{ fontWeight: 800, color: '#34D399' }}>{mov.sku}</div>
@@ -203,6 +243,7 @@ export default function InventoryPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </div>
 

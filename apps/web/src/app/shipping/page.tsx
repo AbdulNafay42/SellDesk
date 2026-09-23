@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -84,9 +86,25 @@ const initialConsignments: Consignment[] = [
 ];
 
 export default function ShippingPage() {
-  const [consignments, setConsignments] = useState<Consignment[]>(initialConsignments);
+  const { activeBusinessId } = useAuth();
+  const [consignments, setConsignments] = useState<Consignment[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchShipping = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<Consignment[]>('/api/shipping');
+        if (isMounted) setConsignments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load shipping consignments:', err);
+      }
+    };
+    fetchShipping();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
   
   // Booking Drawer Modal state
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -233,53 +251,61 @@ export default function ShippingPage() {
         {/* Consignment Table */}
         <div className="glass-card" style={{ padding: '1.5rem' }}>
           <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>CN# & Courier</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Order & Customer</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Destination</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>COD (PKR)</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Airway Bill</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredConsignments.map((ship) => (
-                  <tr key={ship.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: 800, color: '#FFF', fontFamily: 'monospace' }}>{ship.cnNumber}</div>
-                      <div style={{ marginTop: '0.25rem' }}>{getCourierBadge(ship.courier)}</div>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: 700, color: '#FFF' }}>{ship.orderNumber}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>{ship.customerName} ({ship.customerPhone})</div>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: 600, color: '#E5E7EB', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <MapPin style={{ width: '0.875rem', height: '0.875rem', color: '#06B6D4' }} /> {ship.destinationCity}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#6B7280', maxWidth: '14rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {ship.address}
-                      </div>
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: 800, color: '#34D399' }}>
-                      Rs {ship.codAmountPKR.toLocaleString()}
-                    </td>
-                    <td style={{ padding: '1rem' }}>{getStatusBadge(ship.status)}</td>
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <button
-                        onClick={() => setLabelConsignment(ship)}
-                        className="btn-secondary"
-                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
-                      >
-                        <Printer style={{ width: '0.875rem', height: '0.875rem' }} /> Airway Label
-                      </button>
-                    </td>
+            {filteredConsignments.length === 0 ? (
+              <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                <Truck style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 0.75rem auto', color: '#4B5563' }} />
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>0 Consignments Booked</div>
+                <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>No shipping bookings found for this business.</div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
+                    <th style={{ padding: '0.75rem 1rem' }}>CN# & Courier</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Order & Customer</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Destination</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>COD (PKR)</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Airway Bill</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredConsignments.map((ship) => (
+                    <tr key={ship.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ fontWeight: 800, color: '#FFF', fontFamily: 'monospace' }}>{ship.cnNumber}</div>
+                        <div style={{ marginTop: '0.25rem' }}>{getCourierBadge(ship.courier)}</div>
+                      </td>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ fontWeight: 700, color: '#FFF' }}>{ship.orderNumber}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>{ship.customerName} ({ship.customerPhone})</div>
+                      </td>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ fontWeight: 600, color: '#E5E7EB', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <MapPin style={{ width: '0.875rem', height: '0.875rem', color: '#06B6D4' }} /> {ship.destinationCity}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6B7280', maxWidth: '14rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ship.address}
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem', fontWeight: 800, color: '#34D399' }}>
+                        Rs {ship.codAmountPKR.toLocaleString()}
+                      </td>
+                      <td style={{ padding: '1rem' }}>{getStatusBadge(ship.status)}</td>
+                      <td style={{ padding: '1rem', textAlign: 'right' }}>
+                        <button
+                          onClick={() => setLabelConsignment(ship)}
+                          className="btn-secondary"
+                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
+                        >
+                          <Printer style={{ width: '0.875rem', height: '0.875rem' }} /> Airway Label
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

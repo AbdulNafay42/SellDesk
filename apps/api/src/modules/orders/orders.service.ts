@@ -160,10 +160,60 @@ export class OrdersService {
   }
 
   async create(dto: CreateOrderDto) {
+    try {
+      if (this.prisma && (this.prisma as any).order) {
+        let customer = await this.prisma.customer.findFirst({
+          where: { businessId: dto.businessId, phoneNumber: dto.customerPhone || '03000000000' },
+        });
+        if (!customer) {
+          customer = await this.prisma.customer.create({
+            data: {
+              businessId: dto.businessId,
+              fullName: dto.customerName || 'Walk-in Customer',
+              phoneNumber: dto.customerPhone || '03000000000',
+              city: dto.city || 'Lahore',
+              address: dto.address || '',
+            },
+          });
+        }
+
+        const shippingFee = 250;
+        const subtotal = dto.totalAmount || 0;
+        const totalAmount = subtotal + shippingFee;
+        const orderNumber = `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        const createdOrder = await this.prisma.order.create({
+          data: {
+            businessId: dto.businessId,
+            customerId: customer.id,
+            orderNumber,
+            status: 'NEW',
+            paymentStatus: 'PENDING',
+            paymentMethod: dto.paymentMethod || 'COD',
+            subtotal,
+            shippingFee,
+            totalAmount,
+            notes: dto.notes || null,
+          },
+          include: { customer: true },
+        });
+
+        return {
+          ...createdOrder,
+          customerName: customer.fullName,
+          customerPhone: customer.phoneNumber,
+          city: customer.city,
+          address: customer.address,
+        };
+      }
+    } catch (err) {
+      console.error('Error creating order in Prisma:', err);
+    }
+
     const newOrder = {
       id: `ord-${Date.now()}`,
       orderNumber: `#ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      businessId: dto.businessId || 'biz-default',
+      businessId: dto.businessId,
       customerName: dto.customerName,
       customerPhone: dto.customerPhone,
       city: dto.city || 'Lahore',

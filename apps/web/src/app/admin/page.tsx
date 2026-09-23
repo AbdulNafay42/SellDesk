@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -20,6 +22,8 @@ import {
   Send,
 } from 'lucide-react';
 
+import { api } from '@/lib/api';
+
 interface ClientTenantBrand {
   id: string;
   name: string;
@@ -29,75 +33,45 @@ interface ClientTenantBrand {
   whatsappPhone: string;
   city: string;
   plan: 'STARTER' | 'GROWTH' | 'ENTERPRISE';
-  status: 'ACTIVE' | 'SUSPENDED' | 'TRIAL';
+  status: 'ACTIVE' | 'SUSPENDED' | 'TRIAL' | 'PENDING' | 'APPROVED' | 'REJECTED';
   ordersCount: number;
   monthlyRevenuePKR: number;
   joinedDate: string;
 }
 
-const initialTenants: ClientTenantBrand[] = [
-  {
-    id: 'biz-default',
-    name: 'SellDesk Apparels PK',
-    slug: 'selldesk-apparels',
-    ownerName: 'Abdul Nafay',
-    ownerEmail: 'abdulnafay2005@gmail.com',
-    whatsappPhone: '+92 300 1234567',
-    city: 'Lahore',
-    plan: 'GROWTH',
-    status: 'ACTIVE',
-    ordersCount: 141,
-    monthlyRevenuePKR: 485400,
-    joinedDate: '2026-08-01',
-  },
-  {
-    id: 'biz-102',
-    name: 'Khaadi Pret Official',
-    slug: 'khaadi-pret',
-    ownerName: 'Kamran Akmal',
-    ownerEmail: 'kamran@khaadi.com.pk',
-    whatsappPhone: '+92 312 9988776',
-    city: 'Karachi',
-    plan: 'ENTERPRISE',
-    status: 'ACTIVE',
-    ordersCount: 842,
-    monthlyRevenuePKR: 2940000,
-    joinedDate: '2026-08-10',
-  },
-  {
-    id: 'biz-103',
-    name: 'Sapphire Eastern Wear',
-    slug: 'sapphire-eastern',
-    ownerName: 'Tariq Mehmood',
-    ownerEmail: 'tariq@sapphire.pk',
-    whatsappPhone: '+92 345 4433221',
-    city: 'Lahore',
-    plan: 'GROWTH',
-    status: 'ACTIVE',
-    ordersCount: 420,
-    monthlyRevenuePKR: 1450000,
-    joinedDate: '2026-08-18',
-  },
-  {
-    id: 'biz-104',
-    name: 'Outfitters Streetwear',
-    slug: 'outfitters-street',
-    ownerName: 'Zubair Shah',
-    ownerEmail: 'zubair@outfitters.com.pk',
-    whatsappPhone: '+92 301 5544332',
-    city: 'Rawalpindi',
-    plan: 'STARTER',
-    status: 'TRIAL',
-    ordersCount: 48,
-    monthlyRevenuePKR: 168000,
-    joinedDate: '2026-09-12',
-  },
-];
-
 export default function AdminPortalPage() {
-  const [tenants, setTenants] = useState<ClientTenantBrand[]>(initialTenants);
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+  const [tenants, setTenants] = useState<ClientTenantBrand[]>([]);
+  const [isFetching, setIsFetching] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
+
+  const fetchTenants = async () => {
+    try {
+      setIsFetching(true);
+      const data = await api.get<ClientTenantBrand[]>('/api/admin/tenants');
+      setTenants(data || []);
+    } catch (err) {
+      console.error('Failed to fetch tenants from API:', err);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (user?.platformRole !== 'SUPER_ADMIN') {
+        router.push('/dashboard');
+      } else {
+        fetchTenants();
+      }
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || user?.platformRole !== 'SUPER_ADMIN') {
+    return null;
+  }
 
   // Provision Modal state
   const [isProvisionModalOpen, setIsProvisionModalOpen] = useState(false);
@@ -108,38 +82,44 @@ export default function AdminPortalPage() {
   const [city, setCity] = useState('Lahore');
   const [plan, setPlan] = useState<'STARTER' | 'GROWTH' | 'ENTERPRISE'>('GROWTH');
 
-  const handleProvisionTenant = (e: React.FormEvent) => {
+  const handleProvisionTenant = async (e: React.FormEvent) => {
     e.preventDefault();
-    const slug = brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const newTenant: ClientTenantBrand = {
-      id: `biz-${Date.now()}`,
-      name: brandName,
-      slug: slug,
-      ownerName: ownerName,
-      ownerEmail: ownerEmail,
-      whatsappPhone: whatsappPhone,
-      city: city,
-      plan: plan,
-      status: 'ACTIVE',
-      ordersCount: 0,
-      monthlyRevenuePKR: 0,
-      joinedDate: new Date().toISOString().split('T')[0],
-    };
-
-    setTenants([newTenant, ...tenants]);
-    setIsProvisionModalOpen(false);
-    setBrandName('');
-    setOwnerName('');
-    setOwnerEmail('');
-    setWhatsappPhone('');
+    try {
+      await api.post('/api/admin/tenants/provision', {
+        name: brandName,
+        ownerName,
+        ownerEmail,
+        whatsappPhone,
+        city,
+        plan,
+      });
+      setIsProvisionModalOpen(false);
+      setBrandName('');
+      setOwnerName('');
+      setOwnerEmail('');
+      setWhatsappPhone('');
+      await fetchTenants();
+    } catch (err) {
+      console.error('Failed to provision tenant:', err);
+    }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setTenants((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, status: t.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' } : t
-      )
-    );
+  const handleApproveBusiness = async (id: string) => {
+    try {
+      await api.patch(`/api/admin/businesses/${id}/approve`, {});
+      await fetchTenants();
+    } catch (err) {
+      console.error('Failed to approve business:', err);
+    }
+  };
+
+  const handleToggleStatus = async (id: string) => {
+    try {
+      await api.patch(`/api/admin/tenants/${id}/status`, {});
+      await fetchTenants();
+    } catch (err) {
+      console.error('Failed to toggle tenant status:', err);
+    }
   };
 
   const filteredTenants = tenants.filter(
@@ -267,30 +247,42 @@ export default function AdminPortalPage() {
                       <div style={{ fontSize: '0.75rem', color: '#34D399' }}>Rs {ten.monthlyRevenuePKR.toLocaleString()}</div>
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      {ten.status === 'ACTIVE' ? (
+                      {ten.status === 'APPROVED' || ten.status === 'ACTIVE' ? (
                         <span className="badge badge-success">Active</span>
+                      ) : ten.status === 'PENDING' ? (
+                        <span className="badge badge-warning">Pending Approval</span>
                       ) : ten.status === 'TRIAL' ? (
                         <span className="badge badge-warning">Trial</span>
                       ) : (
-                        <span className="badge badge-rose">Suspended</span>
+                        <span className="badge badge-rose">{ten.status || 'Suspended'}</span>
                       )}
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <button
-                        onClick={() => handleToggleStatus(ten.id)}
-                        className="btn-secondary"
-                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
-                      >
-                        {ten.status === 'ACTIVE' ? (
-                          <>
-                            <Ban style={{ width: '0.875rem', height: '0.875rem', color: '#F43F5E' }} /> Suspend
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem', color: '#34D399' }} /> Activate
-                          </>
-                        )}
-                      </button>
+                      {ten.status === 'PENDING' ? (
+                        <button
+                          onClick={() => handleApproveBusiness(ten.id)}
+                          className="btn-primary"
+                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
+                        >
+                          <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem' }} /> Approve Store
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleToggleStatus(ten.id)}
+                          className="btn-secondary"
+                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
+                        >
+                          {ten.status === 'APPROVED' || ten.status === 'ACTIVE' ? (
+                            <>
+                              <Ban style={{ width: '0.875rem', height: '0.875rem', color: '#F43F5E' }} /> Suspend
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem', color: '#34D399' }} /> Activate
+                            </>
+                          )}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

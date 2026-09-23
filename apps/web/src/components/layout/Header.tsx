@@ -2,76 +2,25 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, Bell, Store, CheckCircle2, MessageCircle, Menu, ChevronDown, ShieldCheck, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
+import { Search, Bell, Store, CheckCircle2, MessageCircle, Menu, ChevronDown, ShieldCheck, LogOut, User, Building2 } from 'lucide-react';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
-// User Personas for RBAC Demo
-const personas = [
-  {
-    id: 'usr-super',
-    name: 'Abdul Nafay (Super-Admin)',
-    email: 'abdulnafay2005@gmail.com',
-    role: 'SUPER_ADMIN',
-    allowedBrands: [
-      { id: 'biz-default', name: 'SellDesk Apparels PK', city: 'Lahore', role: 'Owner' },
-      { id: 'biz-102', name: 'Khaadi Pret Official', city: 'Karachi', role: 'Platform Reviewer' },
-      { id: 'biz-103', name: 'Sapphire Eastern Wear', city: 'Lahore', role: 'Platform Reviewer' },
-    ],
-  },
-  {
-    id: 'usr-client',
-    name: 'Kamran Akmal (Client Brand Owner)',
-    email: 'kamran@khaadi.com.pk',
-    role: 'CLIENT_SELLER',
-    allowedBrands: [
-      { id: 'biz-102', name: 'Khaadi Pret Official', city: 'Karachi', role: 'Store Owner' },
-    ],
-  },
-];
-
 export function Header({ onMenuToggle }: HeaderProps) {
-  const [currentPersona, setCurrentPersona] = useState(personas[0]); // Default to Super-Admin
-  const [activeBrand, setActiveBrand] = useState(personas[0].allowedBrands[0]);
+  const router = useRouter();
+  const { user, memberships, activeBusiness, activeBusinessId, selectBusiness, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Initialize from localStorage on client side
-  React.useEffect(() => {
-    try {
-      const savedPersona = localStorage.getItem('selldesk_persona');
-      const savedBrand = localStorage.getItem('selldesk_active_brand');
-      if (savedPersona) {
-        const parsedP = JSON.parse(savedPersona);
-        setCurrentPersona(parsedP);
-      }
-      if (savedBrand) {
-        const parsedB = JSON.parse(savedBrand);
-        setActiveBrand(parsedB);
-      }
-    } catch {}
-  }, []);
-
-  const changeBrandAndPersona = (p: typeof personas[0], b: typeof personas[0]['allowedBrands'][0]) => {
-    setCurrentPersona(p);
-    setActiveBrand(b);
+  const handleSelectBusiness = (bId: string) => {
+    selectBusiness(bId);
     setIsDropdownOpen(false);
-
-    try {
-      localStorage.setItem('selldesk_persona', JSON.stringify(p));
-      localStorage.setItem('selldesk_active_brand', JSON.stringify(b));
-      window.dispatchEvent(new Event('selldesk_tenant_changed'));
-    } catch {}
   };
 
-  const handlePersonaSwitch = (p: typeof personas[0]) => {
-    changeBrandAndPersona(p, p.allowedBrands[0]);
-  };
-
-  const handleSelectBrand = (b: typeof personas[0]['allowedBrands'][0]) => {
-    changeBrandAndPersona(currentPersona, b);
-  };
+  const isSuperAdmin = user?.platformRole === 'SUPER_ADMIN';
 
   return (
     <header style={{
@@ -92,7 +41,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
     }}>
       {/* Multi-Tenant Business Switcher & Mobile Hamburger */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-        {/* Mobile Hamburger toggle button on screens <= 1024px */}
+        {/* Mobile Hamburger toggle button */}
         <button
           onClick={onMenuToggle}
           className="mobile-menu-btn"
@@ -127,9 +76,11 @@ export function Header({ onMenuToggle }: HeaderProps) {
             }}
           >
             <Store style={{ width: '1rem', height: '1rem', color: '#10B981' }} />
-            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFF' }}>{activeBrand.name}</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFF' }}>
+              {activeBusiness?.name || (memberships.length > 0 ? 'Select Business' : 'No Active Store')}
+            </span>
             <span className="badge badge-indigo" style={{ fontSize: '0.65rem' }}>PKR</span>
-            {currentPersona.role === 'SUPER_ADMIN' && (
+            {(memberships.length > 1 || isSuperAdmin) && (
               <ChevronDown style={{ width: '0.875rem', height: '0.875rem', color: '#9CA3AF' }} />
             )}
           </div>
@@ -151,34 +102,39 @@ export function Header({ onMenuToggle }: HeaderProps) {
               }}
             >
               <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', padding: '0.5rem', borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.08)' }}>
-                {currentPersona.role === 'SUPER_ADMIN' ? 'Super-Admin Brand Access' : 'Your Isolated Brand Store'}
+                Your Authorized Store Tenants
               </div>
 
-              {currentPersona.allowedBrands.map((b) => (
-                <div
-                  key={b.id}
-                  onClick={() => handleSelectBrand(b)}
-                  style={{
-                    padding: '0.625rem 0.75rem',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer',
-                    background: activeBrand.id === b.id ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    margin: '0.25rem 0',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF' }}>{b.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{b.city} • {b.role}</div>
-                  </div>
-                  {activeBrand.id === b.id && <CheckCircle2 style={{ width: '1rem', height: '1rem', color: '#34D399' }} />}
-                </div>
-              ))}
+              {memberships.map((m) => {
+                const biz = m.business || {};
+                const isCurrent = activeBusinessId === biz.id || activeBusinessId === m.businessId;
 
-              {/* Super-Admin Only Quick Links */}
-              {currentPersona.role === 'SUPER_ADMIN' && (
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => handleSelectBusiness(biz.id || m.businessId)}
+                    style={{
+                      padding: '0.625rem 0.75rem',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      background: isCurrent ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      margin: '0.25rem 0',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF' }}>{biz.name || 'Store'}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{biz.city || 'Location'} • {m.role}</div>
+                    </div>
+                    {isCurrent && <CheckCircle2 style={{ width: '1rem', height: '1rem', color: '#34D399' }} />}
+                  </div>
+                );
+              })}
+
+              {/* Super-Admin Link */}
+              {isSuperAdmin && (
                 <div style={{ borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', paddingTop: '0.375rem', marginTop: '0.375rem' }}>
                   <Link
                     href="/admin"
@@ -197,38 +153,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
                     }}
                   >
                     <ShieldCheck style={{ width: '1rem', height: '1rem' }} />
-                    Super-Admin Platform Portal
+                    Super-Admin Portal
                   </Link>
                 </div>
               )}
-
-              {/* Persona Switch Simulator */}
-              <div style={{ borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                  Simulate User Role View:
-                </div>
-                {personas.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handlePersonaSwitch(p)}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      background: currentPersona.id === p.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                      border: 'none',
-                      color: currentPersona.id === p.id ? '#FFF' : '#9CA3AF',
-                      fontSize: '0.75rem',
-                      padding: '0.3rem 0.5rem',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      display: 'block',
-                      marginBottom: '0.2rem',
-                    }}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -241,34 +169,49 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </div>
       </div>
 
-      {/* Global Search & Actions */}
+      {/* Global Search & User Profile / Logout */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div className="search-hide-mobile" style={{ position: 'relative', width: '17.5rem' }}>
+        <div className="search-hide-mobile" style={{ position: 'relative', width: '16rem' }}>
           <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: '#6B7280' }} />
           <input
             type="text"
-            placeholder="Search orders, SKU, customer phone..."
+            placeholder="Search orders, SKU..."
             className="input-glass"
             style={{ paddingLeft: '2.375rem', fontSize: '0.82rem' }}
           />
         </div>
 
-        <button style={{
-          width: '2.375rem',
-          height: '2.375rem',
-          borderRadius: '0.625rem',
-          background: 'rgba(255, 255, 255, 0.05)',
-          border: '0.0625rem solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#9CA3AF',
-          cursor: 'pointer',
-          position: 'relative',
-        }}>
-          <Bell style={{ width: '1.125rem', height: '1.125rem' }} />
-          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: '#F43F5E' }} />
-        </button>
+        {/* User Info & Logout Button */}
+        {user ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#FFFFFF' }}>{user.fullName}</span>
+              <span style={{ fontSize: '0.68rem', color: '#9CA3AF' }}>{user.email}</span>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign Out"
+              style={{
+                width: '2.375rem',
+                height: '2.375rem',
+                borderRadius: '0.625rem',
+                background: 'rgba(244, 63, 94, 0.1)',
+                border: '0.0625rem solid rgba(244, 63, 94, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FDA4AF',
+                cursor: 'pointer',
+              }}
+            >
+              <LogOut style={{ width: '1rem', height: '1rem' }} />
+            </button>
+          </div>
+        ) : (
+          <Link href="/login" className="btn-primary" style={{ textDecoration: 'none', padding: '0.4rem 0.875rem', fontSize: '0.8rem' }}>
+            Sign In
+          </Link>
+        )}
       </div>
 
       <style jsx global>{`

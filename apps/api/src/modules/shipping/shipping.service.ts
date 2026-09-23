@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 export interface Consignment {
   id: string;
+  businessId?: string;
   cnNumber: string;
   courier: 'TRAX' | 'LEOPARD' | 'CALLCOURIER' | 'TCS';
   orderNumber: string;
@@ -22,6 +23,7 @@ export class ShippingService {
   private consignments: Consignment[] = [
     {
       id: 'ship-101',
+      businessId: 'biz-default',
       cnNumber: 'TRX-99882211',
       courier: 'TRAX',
       orderNumber: 'ORD-1089',
@@ -43,6 +45,7 @@ export class ShippingService {
     },
     {
       id: 'ship-102',
+      businessId: 'biz-default',
       cnNumber: 'LCS-44110022',
       courier: 'LEOPARD',
       orderNumber: 'ORD-1090',
@@ -62,6 +65,7 @@ export class ShippingService {
     },
     {
       id: 'ship-103',
+      businessId: 'biz-default',
       cnNumber: 'CC-77665544',
       courier: 'CALLCOURIER',
       orderNumber: 'ORD-1091',
@@ -80,12 +84,12 @@ export class ShippingService {
     },
   ];
 
-  findAll(): Consignment[] {
-    return this.consignments;
+  findAll(businessId: string): Consignment[] {
+    return this.consignments.filter((c) => c.businessId === businessId);
   }
 
-  findByCn(cnNumber: string): Consignment {
-    const consignment = this.consignments.find((c) => c.cnNumber === cnNumber);
+  findByCn(cnNumber: string, businessId?: string): Consignment {
+    const consignment = this.consignments.find((c) => c.cnNumber === cnNumber && (!businessId || c.businessId === businessId));
     if (!consignment) {
       throw new NotFoundException(`Consignment CN# ${cnNumber} not found`);
     }
@@ -102,13 +106,14 @@ export class ShippingService {
     codAmountPKR: number;
     weightKg?: number;
     pieces?: number;
-  }): Consignment {
+  }, businessId?: string): Consignment {
     const prefix = dto.courier === 'TRAX' ? 'TRX' : dto.courier === 'LEOPARD' ? 'LCS' : 'CC';
     const randomNum = Math.floor(10000000 + Math.random() * 90000000);
     const newCn = `${prefix}-${randomNum}`;
 
     const consignment: Consignment = {
       id: `ship-${Date.now()}`,
+      businessId: businessId || 'biz-default',
       cnNumber: newCn,
       courier: dto.courier,
       orderNumber: dto.orderNumber,

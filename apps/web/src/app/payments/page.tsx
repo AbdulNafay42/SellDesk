@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -94,7 +96,8 @@ const initialPayments: PaymentRecord[] = [
 ];
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<PaymentRecord[]>(initialPayments);
+  const { activeBusinessId } = useAuth();
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING_VERIFICATION' | 'PAID' | 'REFUNDED'>('ALL');
   const [search, setSearch] = useState('');
@@ -102,6 +105,21 @@ export default function PaymentsPage() {
   // Verification Modal state
   const [selectedPayment, setSelectedPayment] = useState<PaymentRecord | null>(null);
   const [trxInput, setTrxInput] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPayments = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const data = await api.get<PaymentRecord[]>('/api/payments');
+        if (isMounted) setPayments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load payments:', err);
+      }
+    };
+    fetchPayments();
+    return () => { isMounted = false; };
+  }, [activeBusinessId]);
 
   const handleVerify = () => {
     if (!selectedPayment) return;
@@ -253,19 +271,26 @@ export default function PaymentsPage() {
         {/* Payments Table */}
         <div className="glass-card" style={{ padding: '1.5rem' }}>
           <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Order & Customer</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Method</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Amount (PKR)</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>TRX Ref ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPayments.map((pay) => (
+            {filteredPayments.length === 0 ? (
+              <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                <CreditCard style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 0.75rem auto', color: '#4B5563' }} />
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>0 Payments Recorded</div>
+                <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>No payment records found for this business.</div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
+                    <th style={{ padding: '0.75rem 1rem' }}>Order & Customer</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Method</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Amount (PKR)</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>TRX Ref ID</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPayments.map((pay) => (
                   <tr key={pay.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ fontWeight: 700, color: '#FFF' }}>{pay.orderNumber}</div>
@@ -308,6 +333,7 @@ export default function PaymentsPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </div>
 

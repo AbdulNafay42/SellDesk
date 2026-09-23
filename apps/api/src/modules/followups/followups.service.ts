@@ -5,6 +5,7 @@ export class FollowupsService {
   private mockLeads = [
     {
       id: 'lead-1',
+      businessId: 'biz-default',
       customerName: 'Hamza Tariq',
       customerPhone: '0312-7788990',
       city: 'Rawalpindi',
@@ -16,6 +17,7 @@ export class FollowupsService {
     },
     {
       id: 'lead-2',
+      businessId: 'biz-default',
       customerName: 'Sana Malik',
       customerPhone: '0301-4455667',
       city: 'Lahore',
@@ -27,6 +29,7 @@ export class FollowupsService {
     },
     {
       id: 'lead-3',
+      businessId: 'biz-default',
       customerName: 'Bilal Ahmed',
       customerPhone: '0346-1122334',
       city: 'Multan',
@@ -39,11 +42,11 @@ export class FollowupsService {
   ];
 
   async getLeads(businessId: string) {
-    return this.mockLeads;
+    return this.mockLeads.filter((l) => l.businessId === businessId);
   }
 
-  async triggerFollowup(id: string) {
-    const lead = this.mockLeads.find((l) => l.id === id);
+  async triggerFollowup(id: string, businessId?: string) {
+    const lead = this.mockLeads.find((l) => l.id === id && (!businessId || l.businessId === businessId));
     if (!lead) throw new NotFoundException('Lead not found');
     lead.status = 'SENT';
     return { success: true, lead, sentAt: new Date().toISOString() };
