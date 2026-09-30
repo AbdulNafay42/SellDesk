@@ -1,3 +1,4 @@
+require('dotenv').config({ path: 'apps/api/.env' });
 const API_URL = 'http://127.0.0.1:4000';
 
 async function request(method, path, body = null, token = null, tenantId = null) {

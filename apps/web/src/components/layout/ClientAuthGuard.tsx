@@ -29,25 +29,20 @@ export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Authenticated User Logic:
-    // 1. If business status is PENDING, force redirect to /signup/pending for non-pending routes
-    if (activeBusiness && activeBusiness.status === 'PENDING') {
-      if (pathname !== '/signup/pending') {
-        router.push('/signup/pending');
-      }
+    // Public routes (Landing page "/", Login, Signup, Pending) are accessible to all
+    if (isPublic) {
       return;
     }
 
-    // 2. If business status is APPROVED, redirect away from landing or pending screen to /dashboard
-    if (activeBusiness && activeBusiness.status === 'APPROVED') {
-      if (pathname === '/' || pathname === '/signup/pending') {
-        router.push('/dashboard');
-        return;
-      }
+    // Authenticated Protected Routes Logic:
+    // 1. If business status is PENDING, restrict access to seller portal routes
+    if (activeBusiness && activeBusiness.status === 'PENDING') {
+      router.push(`/signup/pending?businessName=${encodeURIComponent(activeBusiness.name || 'Your Business')}`);
+      return;
     }
 
-    // 3. If user has no active tenant selected, redirect to select-tenant
-    if (!activeBusinessId && pathname !== '/select-tenant' && !isPublic) {
+    // 2. If user has no active tenant selected, redirect to select-tenant
+    if (!activeBusinessId && pathname !== '/select-tenant') {
       router.push('/select-tenant');
     }
   }, [isLoading, user, activeBusinessId, activeBusiness, pathname, router]);

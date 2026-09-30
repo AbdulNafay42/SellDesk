@@ -111,6 +111,13 @@ model Business {
   whatsAppConfig  WhatsAppConfig?
   conversations   Conversation[]
   messages        Message[]
+  stockMovements  StockMovement[]
+  payments        PaymentRecord[]
+  consignments    Consignment[]
+  returns         ReturnRequest[]
+  followups       FollowupLead[]
+  aiActions       AiAction[]
+  invoices        Invoice[]
 }
 
 model WhatsAppConfig {
@@ -279,3 +286,143 @@ model Message {
   @@index([businessId])
   @@index([conversationId])
 }
+
+model StockMovement {
+  id            String   @id @default(uuid())
+  businessId    String
+  sku           String
+  productName   String
+  variantInfo   String?
+  type          String   // INBOUND_RESTOCK, OUTBOUND_ORDER, RETURN_RESTOCK, ADJUSTMENT
+  quantity      Int
+  previousStock Int      @default(0)
+  newStock      Int      @default(0)
+  reference     String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model PaymentRecord {
+  id            String   @id @default(uuid())
+  businessId    String
+  orderNumber   String
+  customerName  String
+  customerPhone String
+  paymentMethod String   // COD, BANK_TRANSFER, JAZZCASH, EASYPAISA, RAAST
+  amountPKR     Float
+  status        String   @default("PENDING_VERIFICATION") // PAID, PENDING_VERIFICATION, REFUNDED
+  trxId         String?
+  date          String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model Consignment {
+  id              String   @id @default(uuid())
+  businessId      String
+  cnNumber        String   @unique
+  courier         String   // TRAX, LEOPARD, CALLCOURIER, TCS
+  orderNumber     String
+  customerName    String
+  customerPhone   String
+  destinationCity String
+  address         String
+  codAmountPKR    Float
+  weightKg        Float    @default(0.5)
+  pieces          Int      @default(1)
+  status          String   @default("BOOKED") // BOOKED, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, RETURNED_TO_ORIGIN
+  bookingDate     String?
+  remarks         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model ReturnRequest {
+  id            String   @id @default(uuid())
+  businessId    String
+  returnNumber  String   @unique
+  orderNumber   String
+  customerName  String
+  customerPhone String
+  productName   String
+  sku           String
+  quantity      Int      @default(1)
+  returnReason  String   // SIZE_MISMATCH, WRONG_ITEM_SENT, DEFECTIVE, COD_REFUSED
+  status        String   @default("RETURN_REQUESTED") // RETURN_REQUESTED, APPROVED, RECEIVED_IN_WAREHOUSE, RESTOCKED, REFUNDED
+  requestDate   String?
+  restocked     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model FollowupLead {
+  id                String   @id @default(uuid())
+  businessId        String
+  customerName      String
+  customerPhone     String
+  city              String?
+  inquiredProduct   String
+  hoursElapsed      Int      @default(0)
+  lastMessage       String?
+  suggestedFollowup String?
+  status            String   @default("PENDING") // PENDING, SENT, CONVERTED, DISMISSED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model AiAction {
+  id            String   @id @default(uuid())
+  businessId    String
+  type          String   // ORDER_EXTRACTION, CUSTOMIZATION_REQUEST, etc.
+  customerName  String
+  customerPhone String
+  rawText       String
+  extractedData String?  // JSON stringified payload
+  confidence    Float    @default(0.95)
+  status        String   @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  businessId    String
+  invoiceNumber String   @unique
+  amountPKR     Float
+  date          String
+  status        String   @default("PAID") // PAID, PENDING, UNPAID
+  pdfUrl        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+

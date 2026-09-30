@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface BusinessProfile {
   id: string;
@@ -15,7 +16,7 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: 'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER';
+  role: 'OWNER' | 'ADMIN' | 'STAFF' | 'SALES_AGENT' | 'INVENTORY_MANAGER';
   status: 'ACTIVE' | 'INVITED';
   joinedDate: string;
 }
@@ -33,124 +34,163 @@ export interface SubscriptionBilling {
     aiResponsesUsed: number;
     maxAiResponses: number;
   };
-  invoices: Array<{ id: string; date: string; amountPKR: number; status: string; pdfUrl: string }>;
+  invoices: Array<{ id: string; invoiceNumber: string; date: string; amountPKR: number; status: string; pdfUrl: string }>;
 }
 
 @Injectable()
 export class SettingsService {
-  private businessStore: Record<string, BusinessProfile> = {
-    'biz-default': {
-      id: 'biz-default',
-      name: 'SellDesk Apparels PK',
-      category: 'Instagram Apparel & Clothing Store',
-      whatsappNumber: '+92 300 1234567',
-      currency: 'PKR',
-      city: 'Lahore',
-      address: 'Al-Hafeez Executive Tower, Gulberg III, Lahore',
-      taxNumber: 'NTN-8822019-4',
-    },
-  };
+  constructor(private readonly prisma: PrismaService) {}
 
-  private teamStore: Record<string, TeamMember[]> = {
-    'biz-default': [
-      {
-        id: 'usr-1',
-        name: 'Abdul Nafay',
-        email: 'abdulnafay2005@gmail.com',
-        role: 'OWNER',
-        status: 'ACTIVE',
-        joinedDate: '2026-08-01',
-      },
-      {
-        id: 'usr-2',
-        name: 'Usman Ghani',
-        email: 'usman.sales@selldesk.pk',
-        role: 'SALES_AGENT',
-        status: 'ACTIVE',
-        joinedDate: '2026-08-15',
-      },
-    ],
-  };
+  async getBusiness(businessId: string): Promise<BusinessProfile> {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+    });
 
-  getBusiness(businessId: string): BusinessProfile {
-    if (!this.businessStore[businessId]) {
-      this.businessStore[businessId] = {
-        id: businessId,
-        name: 'My Apparel Business',
-        category: 'Apparel & Clothing Store',
-        whatsappNumber: '+92 300 0000000',
-        currency: 'PKR',
-        city: 'Lahore',
-        address: 'Warehouse Hub Address, Pakistan',
-      };
-    }
-    return this.businessStore[businessId];
-  }
-
-  updateBusiness(dto: Partial<BusinessProfile>, businessId: string): BusinessProfile {
-    const current = this.getBusiness(businessId);
-    this.businessStore[businessId] = { ...current, ...dto, id: businessId };
-    return this.businessStore[businessId];
-  }
-
-  getTeam(businessId: string): TeamMember[] {
-    return this.teamStore[businessId] || [];
-  }
-
-  inviteTeamMember(
-    dto: { name: string; email: string; role: 'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER' },
-    businessId: string,
-  ): TeamMember {
-    const newMember: TeamMember = {
-      id: `usr-${Date.now()}`,
-      name: dto.name,
-      email: dto.email,
-      role: dto.role,
-      status: 'INVITED',
-      joinedDate: new Date().toISOString().split('T')[0],
-    };
-    if (!this.teamStore[businessId]) {
-      this.teamStore[businessId] = [];
-    }
-    this.teamStore[businessId].push(newMember);
-    return newMember;
-  }
-
-  getBilling(businessId: string): SubscriptionBilling {
-    if (businessId === 'biz-default') {
-      return {
-        currentPlan: 'GROWTH',
-        monthlyFeePKR: 6999,
-        billingCycle: 'Monthly (Auto-renew)',
-        nextBillingDate: '2026-10-01',
-        usageMeters: {
-          ordersThisMonth: 141,
-          maxOrders: 1000,
-          teamMembersCount: 4,
-          maxTeamMembers: 10,
-          aiResponsesUsed: 412,
-          maxAiResponses: 5000,
-        },
-        invoices: [
-          { id: 'INV-2026-09', date: '2026-09-01', amountPKR: 6999, status: 'PAID', pdfUrl: '/invoices/INV-2026-09.pdf' },
-        ],
-      };
+    if (!business) {
+      throw new NotFoundException(`Business #${businessId} not found`);
     }
 
     return {
-      currentPlan: 'STARTER',
-      monthlyFeePKR: 2999,
+      id: business.id,
+      name: business.name,
+      category: 'Apparel & Clothing Store',
+      whatsappNumber: business.phone || '+92 300 0000000',
+      currency: business.currency || 'PKR',
+      city: business.city || 'Lahore',
+      address: 'Dispatch Warehouse, Pakistan',
+      taxNumber: 'NTN-REGISTRAND',
+    };
+  }
+
+  async updateBusiness(dto: Partial<BusinessProfile>, businessId: string): Promise<BusinessProfile> {
+    const existing = await this.prisma.business.findUnique({ where: { id: businessId } });
+    if (!existing) throw new NotFoundException(`Business #${businessId} not found`);
+
+    const updated = await this.prisma.business.update({
+      where: { id: businessId },
+      data: {
+        ...(dto.name ? { name: dto.name } : {}),
+        ...(dto.city ? { city: dto.city } : {}),
+        ...(dto.whatsappNumber ? { phone: dto.whatsappNumber } : {}),
+      },
+    });
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      category: dto.category || 'Apparel & Clothing Store',
+      whatsappNumber: updated.phone || '+92 300 0000000',
+      currency: updated.currency || 'PKR',
+      city: updated.city || 'Lahore',
+      address: dto.address || 'Dispatch Warehouse, Pakistan',
+      taxNumber: dto.taxNumber || 'NTN-REGISTRAND',
+    };
+  }
+
+  async getTeam(businessId: string): Promise<TeamMember[]> {
+    const members = await this.prisma.businessMember.findMany({
+      where: { businessId },
+      include: {
+        user: { select: { id: true, fullName: true, email: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return members.map((m) => ({
+      id: m.id,
+      name: m.user.fullName,
+      email: m.user.email,
+      role: m.role as any,
+      status: 'ACTIVE',
+      joinedDate: m.createdAt.toISOString().split('T')[0],
+    }));
+  }
+
+  async inviteTeamMember(
+    dto: { name: string; email: string; role: 'OWNER' | 'ADMIN' | 'STAFF' | 'SALES_AGENT' | 'INVENTORY_MANAGER' },
+    businessId: string,
+  ): Promise<TeamMember> {
+    const bcrypt = require('bcryptjs');
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
+    let user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      const defaultPasswordHash = bcrypt.hashSync('password123', 10);
+      user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash: defaultPasswordHash,
+          fullName: dto.name,
+          platformRole: 'USER',
+        },
+      });
+    }
+
+    const mappedRole = (dto.role === 'ADMIN' || dto.role === 'OWNER') ? dto.role : 'STAFF';
+
+    const existingMember = await this.prisma.businessMember.findUnique({
+      where: {
+        userId_businessId: {
+          userId: user.id,
+          businessId,
+        },
+      },
+    });
+
+    let memberRecord = existingMember;
+    if (!memberRecord) {
+      memberRecord = await this.prisma.businessMember.create({
+        data: {
+          userId: user.id,
+          businessId,
+          role: mappedRole as any,
+        },
+      });
+    }
+
+    return {
+      id: memberRecord.id,
+      name: user.fullName,
+      email: user.email,
+      role: dto.role,
+      status: 'INVITED',
+      joinedDate: memberRecord.createdAt.toISOString().split('T')[0],
+    };
+  }
+
+  async getBilling(businessId: string): Promise<SubscriptionBilling> {
+    const ordersCount = await this.prisma.order.count({ where: { businessId } });
+    const teamMembersCount = await this.prisma.businessMember.count({ where: { businessId } });
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: { businessId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      currentPlan: 'GROWTH',
+      monthlyFeePKR: 6999,
       billingCycle: 'Monthly',
       nextBillingDate: '2026-10-01',
       usageMeters: {
-        ordersThisMonth: 0,
-        maxOrders: 250,
-        teamMembersCount: (this.teamStore[businessId] || []).length || 1,
-        maxTeamMembers: 3,
+        ordersThisMonth: ordersCount,
+        maxOrders: 1000,
+        teamMembersCount: teamMembersCount,
+        maxTeamMembers: 10,
         aiResponsesUsed: 0,
-        maxAiResponses: 1000,
+        maxAiResponses: 5000,
       },
-      invoices: [],
+      invoices: invoices.map((inv) => ({
+        id: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        date: inv.date,
+        amountPKR: inv.amountPKR,
+        status: inv.status,
+        pdfUrl: inv.pdfUrl || `/invoices/${inv.invoiceNumber}.pdf`,
+      })),
     };
   }
 }

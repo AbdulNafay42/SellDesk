@@ -35,7 +35,7 @@ export class AdminController {
   }
 
   @Post('tenants/provision')
-  provisionTenant(
+  async provisionTenant(
     @Body()
     body: {
       name: string;
@@ -45,7 +45,7 @@ export class AdminController {
       city: string;
       plan: 'STARTER' | 'GROWTH' | 'ENTERPRISE';
     },
-  ): ClientTenantBrand {
+  ): Promise<ClientTenantBrand> {
     return this.adminService.provisionTenant(body);
   }
 

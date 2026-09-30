@@ -17,7 +17,7 @@ export default function SelectTenantPage() {
 
   const handleSelect = (businessId: string) => {
     selectBusiness(businessId);
-    router.push('/');
+    router.push('/dashboard');
   };
 
   if (isLoading) {
@@ -135,14 +135,21 @@ export default function SelectTenantPage() {
             memberships.map((m) => {
               const biz = m.business || {};
               const isSelected = activeBusinessId === biz.id || activeBusinessId === m.businessId;
+              const isPending = biz.status === 'PENDING';
 
               return (
                 <div
                   key={m.id}
-                  onClick={() => handleSelect(biz.id || m.businessId)}
+                  onClick={() => {
+                    if (isPending) {
+                      router.push(`/signup/pending?businessName=${encodeURIComponent(biz.name || 'Your Business')}`);
+                    } else {
+                      handleSelect(biz.id || m.businessId);
+                    }
+                  }}
                   style={{
-                    background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(17, 24, 39, 0.8)',
-                    border: isSelected ? '0.0625rem solid rgba(16, 185, 129, 0.4)' : '0.0625rem solid rgba(255, 255, 255, 0.1)',
+                    background: isSelected ? 'rgba(16, 185, 129, 0.12)' : isPending ? 'rgba(245, 158, 11, 0.08)' : 'rgba(17, 24, 39, 0.8)',
+                    border: isSelected ? '0.0625rem solid rgba(16, 185, 129, 0.4)' : isPending ? '0.0625rem solid rgba(245, 158, 11, 0.3)' : '0.0625rem solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '0.875rem',
                     padding: '1.125rem 1.25rem',
                     display: 'flex',
@@ -164,15 +171,20 @@ export default function SelectTenantPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: isSelected ? '#34D399' : '#818CF8',
+                        color: isSelected ? '#34D399' : isPending ? '#FBBF24' : '#818CF8',
                       }}
                     >
                       <Store style={{ width: '1.25rem', height: '1.25rem' }} />
                     </div>
 
                     <div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF' }}>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {biz.name || 'Unnamed Business'}
+                        {isPending && (
+                          <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>
+                            Pending Approval
+                          </span>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem' }}>
                         <span style={{ fontSize: '0.78rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -188,6 +200,8 @@ export default function SelectTenantPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {isSelected ? (
                       <CheckCircle2 style={{ width: '1.25rem', height: '1.25rem', color: '#34D399' }} />
+                    ) : isPending ? (
+                      <span style={{ fontSize: '0.75rem', color: '#FBBF24', fontWeight: 600 }}>Check Status ➔</span>
                     ) : (
                       <ArrowRight style={{ width: '1.125rem', height: '1.125rem', color: '#6B7280' }} />
                     )}

@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { AiService, ClassifyMessageDto, ExtractOrderDto, GenerateReplyDto } from './ai.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 
 @Controller('ai')
+@UseGuards(JwtAuthGuard, TenantGuard)
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
@@ -16,22 +19,22 @@ export class AiController {
   }
 
   @Post('generate-reply')
-  async generateReply(@Body() dto: GenerateReplyDto) {
-    return this.aiService.generateGuardrailedReply(dto);
+  async generateReply(@Body() dto: GenerateReplyDto, @Req() req: any) {
+    return this.aiService.generateGuardrailedReply(dto, req.tenantId);
   }
 
   @Get('actions')
-  async getPendingActions() {
-    return this.aiService.getPendingActions();
+  async getPendingActions(@Req() req: any) {
+    return this.aiService.getPendingActions(req.tenantId);
   }
 
   @Post('actions/:id/approve')
-  async approveAction(@Param('id') id: string) {
-    return this.aiService.approveAction(id);
+  async approveAction(@Param('id') id: string, @Req() req: any) {
+    return this.aiService.approveAction(id, req.tenantId);
   }
 
   @Post('actions/:id/reject')
-  async rejectAction(@Param('id') id: string) {
-    return this.aiService.rejectAction(id);
+  async rejectAction(@Param('id') id: string, @Req() req: any) {
+    return this.aiService.rejectAction(id, req.tenantId);
   }
 }

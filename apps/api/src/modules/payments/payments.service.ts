@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface PaymentRecord {
   id: string;
@@ -6,96 +7,45 @@ export interface PaymentRecord {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
-  paymentMethod: 'COD' | 'BANK_TRANSFER' | 'JAZZCASH' | 'EASYPAISA' | 'RAAST';
+  paymentMethod: string;
   amountPKR: number;
-  status: 'PAID' | 'PENDING_VERIFICATION' | 'REFUNDED';
+  status: string;
   trxId?: string;
-  date: string;
+  date: any;
   notes?: string;
 }
 
 @Injectable()
 export class PaymentsService {
-  private payments: PaymentRecord[] = [
-    {
-      id: 'pay-101',
-      businessId: 'biz-default',
-      orderNumber: 'ORD-1089',
-      customerName: 'Hamza Tariq',
-      customerPhone: '0312-7788990',
-      paymentMethod: 'COD',
-      amountPKR: 3500,
-      status: 'PAID',
-      date: '2026-09-21 14:30',
-      notes: 'Collected by Courier on Delivery',
-    },
-    {
-      id: 'pay-102',
-      businessId: 'biz-default',
-      orderNumber: 'ORD-1090',
-      customerName: 'Sana Malik',
-      customerPhone: '0301-4455667',
-      paymentMethod: 'BANK_TRANSFER',
-      amountPKR: 4500,
-      status: 'PENDING_VERIFICATION',
-      trxId: 'MEEZAN-998822',
-      date: '2026-09-21 15:10',
-      notes: 'Customer uploaded online mobile banking receipt screenshot',
-    },
-    {
-      id: 'pay-103',
-      businessId: 'biz-default',
-      orderNumber: 'ORD-1091',
-      customerName: 'Bilal Ahmed',
-      customerPhone: '0346-1122334',
-      paymentMethod: 'JAZZCASH',
-      amountPKR: 2900,
-      status: 'PAID',
-      trxId: 'JC-88220199',
-      date: '2026-09-21 12:15',
-      notes: 'Instant wallet transfer verified',
-    },
-    {
-      id: 'pay-104',
-      businessId: 'biz-default',
-      orderNumber: 'ORD-1092',
-      customerName: 'Ayesha Khan',
-      customerPhone: '0300-9988776',
-      paymentMethod: 'EASYPAISA',
-      amountPKR: 1450,
-      status: 'PENDING_VERIFICATION',
-      trxId: 'EP-4455110',
-      date: '2026-09-21 16:05',
-      notes: 'Pending manual banking check',
-    },
-    {
-      id: 'pay-105',
-      businessId: 'biz-default',
-      orderNumber: 'ORD-1082',
-      customerName: 'Zubair Raza',
-      customerPhone: '0333-2211443',
-      paymentMethod: 'COD',
-      amountPKR: 3500,
-      status: 'REFUNDED',
-      date: '2026-09-20 11:20',
-      notes: 'Size exchange refund processed via Raast',
-    },
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll(businessId: string): PaymentRecord[] {
-    return this.payments.filter((p) => p.businessId === businessId);
+  async findAll(businessId: string) {
+    return await this.prisma.paymentRecord.findMany({
+      where: { businessId },
+      orderBy: { date: 'desc' },
+    });
   }
 
-  verifyPayment(id: string, trxId?: string, businessId?: string): PaymentRecord {
-    const payment = this.payments.find((p) => p.id === id && (!businessId || p.businessId === businessId));
+  async verifyPayment(id: string, trxId?: string, businessId?: string) {
+    const payment = await this.prisma.paymentRecord.findFirst({
+      where: {
+        id,
+        ...(businessId ? { businessId } : {}),
+      },
+    });
+
     if (!payment) {
       throw new NotFoundException(`Payment record #${id} not found`);
     }
-    payment.status = 'PAID';
-    if (trxId) {
-      payment.trxId = trxId;
-    }
-    payment.notes = `Verified manually by Seller on ${new Date().toLocaleTimeString()}`;
-    return payment;
+
+    return await this.prisma.paymentRecord.update({
+      where: { id: payment.id },
+      data: {
+        status: 'PAID',
+        ...(trxId ? { trxId } : {}),
+        notes: `Verified manually by Seller on ${new Date().toLocaleTimeString()}`,
+      },
+    });
   }
 }
+

@@ -1,3 +1,4 @@
+require('dotenv').config({ path: 'apps/api/.env' });
 const http = require('http');
 
 function request(options, data) {
@@ -79,7 +80,8 @@ async function runFoundationTests() {
     );
 
     const adminToken = adminLogin.body.accessToken;
-    const adminBizId = 'biz-default';
+    const adminBizId = adminLogin.body.memberships[0]?.businessId || adminLogin.body.memberships[0]?.business?.id;
+
 
     // 4. Save Tenant-Owned WhatsApp Config (POST /api/whatsapp/config)
     console.log('\n[4] Saving Tenant-Owned WhatsApp Config for Business A (biz-default)...');
@@ -150,12 +152,13 @@ async function runFoundationTests() {
       },
     });
 
-    if (configGetB.status === 200 && (!configGetB.body || configGetB.body === '' || Object.keys(configGetB.body).length === 0)) {
+    if (configGetB.status === 403 || (configGetB.status === 200 && (!configGetB.body || configGetB.body === '' || Object.keys(configGetB.body).length === 0))) {
       console.log('  ✓ Tenant Isolation PASSED: Business B cannot access Business A WhatsApp Config.');
     } else {
       console.error('  ✕ Tenant Isolation FAILED:', configGetB);
       process.exit(1);
     }
+
 
     // 7. Test Incoming Webhook Tenant Resolution with Payload
     console.log('\n[7] Posting Incoming Meta Webhook Payload with phone_number_id...');

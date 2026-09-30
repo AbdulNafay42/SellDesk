@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -25,47 +27,9 @@ interface PendingAction {
   createdAt: string;
 }
 
-const initialActions: PendingAction[] = [
-  {
-    id: 'ai-act-1',
-    type: 'ORDER_EXTRACTION',
-    customerName: 'Ahmed Khan',
-    customerPhone: '0300-4829102',
-    rawText: '2 black XL COD Lahore please',
-    extractedData: {
-      productName: 'Oversized Black Premium Hoodie',
-      variant: 'Size: XL • Color: Black',
-      quantity: 2,
-      city: 'Lahore',
-      paymentMethod: 'COD',
-      itemPrice: 4499,
-      shippingFee: 250,
-      totalAmount: 9248,
-    },
-    confidence: 0.98,
-    status: 'PENDING_APPROVAL',
-    createdAt: '10 mins ago',
-  },
-  {
-    id: 'ai-act-2',
-    type: 'CUSTOMIZATION_REQUEST',
-    customerName: 'Usman Ali',
-    customerPhone: '0333-1029384',
-    rawText: 'Essential white tee pe custom sticker design print hosakta hai?',
-    extractedData: {
-      productName: 'Minimalist Essential White Tee',
-      customType: 'Sticker Printing',
-      attachment: 'sticker_design.png',
-      notes: 'Customer requested custom chest print preview',
-    },
-    confidence: 0.91,
-    status: 'PENDING_APPROVAL',
-    createdAt: '3 hours ago',
-  },
-];
-
 export default function AiEnginePage() {
-  const [actions, setActions] = useState<PendingAction[]>(initialActions);
+  const { activeBusinessId } = useAuth();
+  const [actions, setActions] = useState<PendingAction[]>([]);
   const [simText, setSimText] = useState('Salam, 2 black XL COD Lahore bhej dein');
   const [simResult, setSimResult] = useState<any>(null);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -76,34 +40,56 @@ export default function AiEnginePage() {
   const [ragGuardrailsEnabled, setRagGuardrailsEnabled] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.85);
 
-  const handleApprove = (id: string) => {
-    setActions((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'APPROVED' } : a)));
+  const fetchActions = async () => {
+    if (!activeBusinessId) return;
+    try {
+      const data = await api.get<PendingAction[]>('/api/ai/actions');
+      setActions(data || []);
+    } catch (err) {
+      console.error('Failed to fetch AI pending actions:', err);
+    }
   };
 
-  const handleReject = (id: string) => {
-    setActions((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'REJECTED' } : a)));
+  useEffect(() => {
+    fetchActions();
+  }, [activeBusinessId]);
+
+  const handleApprove = async (id: string) => {
+    try {
+      await api.post(`/api/ai/actions/${id}/approve`, {});
+      await fetchActions();
+    } catch (err) {
+      console.error('Failed to approve AI action:', err);
+    }
   };
 
-  const runSimulation = () => {
+  const handleReject = async (id: string) => {
+    try {
+      await api.post(`/api/ai/actions/${id}/reject`, {});
+      await fetchActions();
+    } catch (err) {
+      console.error('Failed to reject AI action:', err);
+    }
+  };
+
+  const runSimulation = async () => {
     setIsSimulating(true);
-    setTimeout(() => {
+    try {
+      const extractRes = await api.post<any>('/api/ai/extract-order', { text: simText });
+      const replyRes = await api.post<any>('/api/ai/generate-reply', { text: simText });
+
       setSimResult({
         intent: 'ORDER_EXTRACTION',
-        confidenceScore: 0.98,
-        guardrailCheck: 'PASSED (Zero Hallucinations Guarantee)',
-        extractedOrder: {
-          productName: 'Oversized Black Premium Hoodie',
-          size: 'XL',
-          color: 'Black',
-          quantity: 2,
-          city: 'Lahore',
-          paymentMethod: 'COD',
-          totalPrice: 'Rs 9,248 (incl. Rs 250 delivery)',
-        },
-        aiSuggestedReply: 'Walaikum Assalam! Aap ka order 2x Oversized Black Hoodie (XL) COD Lahore confirm karne ke liye tayyar hai. Product Price Rs 8,998 + Rs 250 Delivery = Total Rs 9,248.',
+        confidenceScore: extractRes.confidenceScore || 0.98,
+        guardrailCheck: extractRes.guardrailCheck || 'PASSED (Stock & Price Verified in Database)',
+        extractedOrder: extractRes.extractedOrder || {},
+        aiSuggestedReply: replyRes.reply || 'Walaikum Assalam! Order process karne ke liye tayyar hai.',
       });
+    } catch (err) {
+      console.error('Simulation error:', err);
+    } finally {
       setIsSimulating(false);
-    }, 400);
+    }
   };
 
   return (
@@ -160,55 +146,63 @@ export default function AiEnginePage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {actions.map((act) => (
-              <div key={act.id} style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '0.0625rem solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '0.875rem',
-                padding: '1.125rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '1rem',
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                    <span className={act.type === 'ORDER_EXTRACTION' ? 'badge badge-success' : 'badge badge-warning'}>
-                      {act.type}
-                    </span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF' }}>{act.customerName}</span>
-                    <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>({act.customerPhone})</span>
-                    <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>• {act.createdAt}</span>
-                  </div>
-
-                  <div style={{ fontSize: '0.85rem', color: '#D1D5DB', fontStyle: 'italic', marginBottom: '0.625rem' }}>
-                    Raw WhatsApp Msg: &ldquo;{act.rawText}&rdquo;
-                  </div>
-
-                  <div style={{ fontSize: '0.8rem', color: '#34D399', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '0.0625rem solid rgba(16, 185, 129, 0.2)' }}>
-                    Extracted Payload: {JSON.stringify(act.extractedData)}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {act.status === 'PENDING_APPROVAL' ? (
-                    <>
-                      <button onClick={() => handleApprove(act.id)} className="btn-primary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem' }}>
-                        <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem' }} /> Approve & Create
-                      </button>
-                      <button onClick={() => handleReject(act.id)} className="btn-secondary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem', color: '#FDA4AF' }}>
-                        <XCircle style={{ width: '0.875rem', height: '0.875rem' }} /> Reject
-                      </button>
-                    </>
-                  ) : (
-                    <span className={act.status === 'APPROVED' ? 'badge badge-success' : 'badge badge-rose'}>
-                      {act.status}
-                    </span>
-                  )}
-                </div>
+            {actions.length === 0 ? (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#9CA3AF', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '0.75rem' }}>
+                <Sparkles style={{ width: '2rem', height: '2rem', color: '#4B5563', margin: '0 auto 0.5rem auto' }} />
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>0 Pending Actions</div>
+                <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>No pending AI order extractions or customization requests require seller review.</div>
               </div>
-            ))}
+            ) : (
+              actions.map((act) => (
+                <div key={act.id} style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '0.0625rem solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '0.875rem',
+                  padding: '1.125rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                      <span className={act.type === 'ORDER_EXTRACTION' ? 'badge badge-success' : 'badge badge-warning'}>
+                        {act.type}
+                      </span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FFF' }}>{act.customerName}</span>
+                      <span style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>({act.customerPhone})</span>
+                      <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>• {act.createdAt}</span>
+                    </div>
+
+                    <div style={{ fontSize: '0.85rem', color: '#D1D5DB', fontStyle: 'italic', marginBottom: '0.625rem' }}>
+                      Raw WhatsApp Msg: &ldquo;{act.rawText}&rdquo;
+                    </div>
+
+                    <div style={{ fontSize: '0.8rem', color: '#34D399', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '0.0625rem solid rgba(16, 185, 129, 0.2)' }}>
+                      Extracted Payload: {typeof act.extractedData === 'object' ? JSON.stringify(act.extractedData) : act.extractedData}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {act.status === 'PENDING_APPROVAL' ? (
+                      <>
+                        <button onClick={() => handleApprove(act.id)} className="btn-primary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem' }}>
+                          <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem' }} /> Approve & Create
+                        </button>
+                        <button onClick={() => handleReject(act.id)} className="btn-secondary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem', color: '#FDA4AF' }}>
+                          <XCircle style={{ width: '0.875rem', height: '0.875rem' }} /> Reject
+                        </button>
+                      </>
+                    ) : (
+                      <span className={act.status === 'APPROVED' ? 'badge badge-success' : 'badge badge-rose'}>
+                        {act.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

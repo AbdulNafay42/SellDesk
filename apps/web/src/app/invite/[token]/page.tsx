@@ -90,15 +90,29 @@ export default function InvitationPage() {
 
     setIsActivating(true);
     try {
-      await api.post('/api/auth/accept-invite', {
+      const res = await api.post<any>('/api/auth/accept-invite', {
         token,
         password,
       });
 
+      if (res && res.accessToken) {
+        localStorage.setItem('selldesk_auth_token', res.accessToken);
+        if (res.memberships && res.memberships.length > 0) {
+          const tenantId = res.memberships[0].businessId || res.memberships[0].business?.id;
+          if (tenantId) {
+            localStorage.setItem('selldesk_active_tenant_id', tenantId);
+          }
+        }
+      }
+
       setActivationSuccess(true);
       setTimeout(() => {
-        router.push('/login');
-      }, 2500);
+        if (res && res.accessToken) {
+          router.push('/dashboard');
+        } else {
+          router.push('/login');
+        }
+      }, 1500);
     } catch (err: any) {
       setActivationError(err?.message || 'Failed to activate account. Please try again.');
     } finally {

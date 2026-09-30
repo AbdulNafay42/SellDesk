@@ -49,7 +49,7 @@ interface AuthContextType {
   }) => Promise<any>;
   logout: () => void;
   selectBusiness: (businessId: string) => void;
-  refreshAuth: () => Promise<void>;
+  refreshAuth: () => Promise<Membership[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,51 +90,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initial auth check on mount
   useEffect(() => {
+    let isMounted = true;
+
+    // Safety fallback timer: guarantee isLoading becomes false within 2.5s
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 2500);
+
     const initAuth = async () => {
       const storedToken = localStorage.getItem('selldesk_auth_token');
       const storedTenantId = localStorage.getItem('selldesk_active_tenant_id');
 
       if (!storedToken) {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
+        clearTimeout(safetyTimer);
         return;
       }
 
-      setToken(storedToken);
+      if (isMounted) setToken(storedToken);
 
       try {
         // Fetch current user
         const userData = await api.get<User>('/api/auth/me');
-        setUser(userData);
+        if (isMounted) setUser(userData);
 
         // Fetch memberships
         const memData = await api.get<Membership[]>('/api/auth/memberships');
-        setMemberships(memData || []);
+        if (isMounted) setMemberships(memData || []);
 
         // Active business selection
         if (storedTenantId && memData.some((m) => m.businessId === storedTenantId || m.business?.id === storedTenantId)) {
-          setActiveBusinessId(storedTenantId);
+          if (isMounted) setActiveBusinessId(storedTenantId);
         } else if (memData.length === 1) {
           const autoId = memData[0].businessId || memData[0].business?.id;
-          setActiveBusinessId(autoId);
+          if (isMounted) setActiveBusinessId(autoId);
           localStorage.setItem('selldesk_active_tenant_id', autoId);
         } else {
-          setActiveBusinessId(null);
+          if (isMounted) setActiveBusinessId(null);
           localStorage.removeItem('selldesk_active_tenant_id');
         }
       } catch (err) {
         console.error('Failed to restore auth session:', err);
         localStorage.removeItem('selldesk_auth_token');
         localStorage.removeItem('selldesk_active_tenant_id');
-        setToken(null);
-        setUser(null);
-        setMemberships([]);
-        setActiveBusinessId(null);
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
+          setMemberships([]);
+          setActiveBusinessId(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
+        clearTimeout(safetyTimer);
       }
     };
 
     initAuth();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -190,7 +208,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     city: string;
     country: string;
   }) => {
-    return api.post('/api/auth/register', dto);
+    const res = await api.post<any>('/api/auth/register', dto);
+    if (res && res.accessToken) {
+      localStorage.setItem('selldesk_auth_token', res.accessToken);
+      setToken(res.accessToken);
+      if (res.user) setUser(res.user);
+      if (res.memberships) setMemberships(res.memberships);
+      if (res.business?.id) {
+        setActiveBusinessId(res.business.id);
+        localStorage.setItem('selldesk_active_tenant_id', res.business.id);
+      }
+    }
+    return res;
   };
 
   const logout = () => {
@@ -215,17 +244,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refreshAuth = async () => {
+  const refreshAuth = async (): Promise<Membership[]> => {
     const currentToken = localStorage.getItem('selldesk_auth_token');
-    if (!currentToken) return;
+    if (!currentToken) return [];
 
     try {
       const userData = await api.get<User>('/api/auth/me');
       setUser(userData);
       const memData = await api.get<Membership[]>('/api/auth/memberships');
       setMemberships(memData || []);
+      return memData || [];
     } catch (err) {
       console.error('Failed to refresh auth state:', err);
+      return [];
     }
   };
 

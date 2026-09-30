@@ -26,45 +26,6 @@ interface Movement {
   timestamp: string;
 }
 
-const initialMovements: Movement[] = [
-  {
-    id: 'mov-1',
-    sku: 'HD-BLK-XL',
-    productName: 'Oversized Black Premium Hoodie',
-    variantInfo: 'Size: XL • Color: Black',
-    type: 'OUTBOUND_ORDER',
-    quantity: -2,
-    previousStock: 5,
-    newStock: 3,
-    reference: 'Order #ORD-1042',
-    timestamp: '10 mins ago',
-  },
-  {
-    id: 'mov-2',
-    sku: 'JKT-VNT-M',
-    productName: 'Vintage Wash Denim Jacket',
-    variantInfo: 'Size: M • Color: Blue Wash',
-    type: 'INBOUND_RESTOCK',
-    quantity: 10,
-    previousStock: 0,
-    newStock: 10,
-    reference: 'Supplier Restock #SS-489',
-    timestamp: 'Yesterday',
-  },
-  {
-    id: 'mov-3',
-    sku: 'TS-WHT-S',
-    productName: 'Minimalist Essential White Tee',
-    variantInfo: 'Size: S • Color: White',
-    type: 'OUTBOUND_ORDER',
-    quantity: -1,
-    previousStock: 41,
-    newStock: 40,
-    reference: 'Order #ORD-1038',
-    timestamp: '2 days ago',
-  },
-];
-
 import { useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';

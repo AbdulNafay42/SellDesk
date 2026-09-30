@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductsService } from '../products/products.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface ClassifyMessageDto {
   text: string;
@@ -15,46 +16,10 @@ export interface GenerateReplyDto {
 
 @Injectable()
 export class AiService {
-  constructor(private readonly productsService: ProductsService) {}
-
-  private mockPendingActions = [
-    {
-      id: 'ai-act-1',
-      type: 'ORDER_EXTRACTION',
-      customerName: 'Ahmed Khan',
-      customerPhone: '0300-4829102',
-      rawText: '2 black XL COD Lahore please',
-      extractedData: {
-        productName: 'Oversized Black Premium Hoodie',
-        variant: 'Size: XL • Color: Black',
-        quantity: 2,
-        city: 'Lahore',
-        paymentMethod: 'COD',
-        itemPrice: 4499,
-        shippingFee: 250,
-        totalAmount: 9248,
-      },
-      confidence: 0.98,
-      status: 'PENDING_APPROVAL',
-      createdAt: '10 mins ago',
-    },
-    {
-      id: 'ai-act-2',
-      type: 'CUSTOMIZATION_REQUEST',
-      customerName: 'Usman Ali',
-      customerPhone: '0333-1029384',
-      rawText: 'Essential white tee pe custom sticker design print hosakta hai?',
-      extractedData: {
-        productName: 'Minimalist Essential White Tee',
-        customType: 'Sticker Printing',
-        attachment: 'sticker_design.png',
-        notes: 'Customer requested custom chest print',
-      },
-      confidence: 0.91,
-      status: 'PENDING_APPROVAL',
-      createdAt: '3 hours ago',
-    },
-  ];
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async classifyMessage(dto: ClassifyMessageDto) {
     const text = dto.text.toLowerCase();
@@ -119,24 +84,29 @@ export class AiService {
     };
   }
 
-  async generateGuardrailedReply(dto: GenerateReplyDto) {
+  async generateGuardrailedReply(dto: GenerateReplyDto, businessId: string) {
     const text = dto.text.toLowerCase();
-    const products = await this.productsService.findAll('biz-default');
+    const products = await this.productsService.findAll(businessId);
 
     if (text.includes('black hoodie') || text.includes('hoodie')) {
-      const hoodie = products.find((p) => p.name.includes('Hoodie')) || products[0];
-      return {
-        reply: `Ji ${hoodie.name} available hai! Price Rs ${hoodie.basePrice.toLocaleString()}. Available sizes: S, M, L, XL. Standard delivery 2-3 working days.`,
-        guardrails: {
-          priceVerified: true,
-          stockVerified: true,
-          hallucinatedDataPrevented: true,
-        },
-      };
+      const hoodie = (products && products.length > 0)
+        ? (products.find((p) => p.name.includes('Hoodie')) || products[0])
+        : null;
+
+      if (hoodie) {
+        return {
+          reply: `Ji ${hoodie.name} available hai! Price Rs ${hoodie.basePrice.toLocaleString()}. Available sizes: S, M, L, XL. Standard delivery 2-3 working days.`,
+          guardrails: {
+            priceVerified: true,
+            stockVerified: true,
+            hallucinatedDataPrevented: true,
+          },
+        };
+      }
     }
 
     return {
-      reply: 'Walaikum Assalam! UrbanThreads PK main khushamdeed. Humari team aap kay order inquire main madad karne ke liye tayyar hai.',
+      reply: 'Walaikum Assalam! SellDesk store main khushamdeed. Humari team aap kay order inquire main madad karne ke liye tayyar hai.',
       guardrails: {
         priceVerified: true,
         stockVerified: true,
@@ -145,23 +115,86 @@ export class AiService {
     };
   }
 
-  async getPendingActions() {
-    return this.mockPendingActions;
+  async getPendingActions(businessId: string) {
+    const actions = await this.prisma.aiAction.findMany({
+      where: { businessId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return actions.map((a) => {
+      let parsedPayload = null;
+      try {
+        parsedPayload = a.extractedData ? JSON.parse(a.extractedData) : null;
+      } catch {
+        parsedPayload = a.extractedData;
+      }
+
+      return {
+        id: a.id,
+        type: a.type,
+        customerName: a.customerName,
+        customerPhone: a.customerPhone,
+        rawText: a.rawText,
+        extractedData: parsedPayload,
+        confidence: a.confidence,
+        status: a.status,
+        createdAt: a.createdAt.toISOString(),
+      };
+    });
   }
 
-  async approveAction(id: string) {
-    const item = this.mockPendingActions.find((a) => a.id === id);
-    if (item) {
-      item.status = 'APPROVED';
-    }
-    return { success: true, id, status: 'APPROVED' };
+  async createPendingAction(dto: {
+    businessId: string;
+    type: string;
+    customerName: string;
+    customerPhone: string;
+    rawText: string;
+    extractedData?: any;
+    confidence?: number;
+  }) {
+    return await this.prisma.aiAction.create({
+      data: {
+        businessId: dto.businessId,
+        type: dto.type,
+        customerName: dto.customerName,
+        customerPhone: dto.customerPhone,
+        rawText: dto.rawText,
+        extractedData: dto.extractedData ? JSON.stringify(dto.extractedData) : null,
+        confidence: dto.confidence || 0.95,
+        status: 'PENDING_APPROVAL',
+      },
+    });
   }
 
-  async rejectAction(id: string) {
-    const item = this.mockPendingActions.find((a) => a.id === id);
-    if (item) {
-      item.status = 'REJECTED';
+  async approveAction(id: string, businessId: string) {
+    const action = await this.prisma.aiAction.findFirst({
+      where: { id, businessId },
+    });
+    if (!action) {
+      throw new NotFoundException(`AI Action #${id} not found`);
     }
-    return { success: true, id, status: 'REJECTED' };
+
+    const updated = await this.prisma.aiAction.update({
+      where: { id },
+      data: { status: 'APPROVED' },
+    });
+
+    return { success: true, id: updated.id, status: updated.status };
+  }
+
+  async rejectAction(id: string, businessId: string) {
+    const action = await this.prisma.aiAction.findFirst({
+      where: { id, businessId },
+    });
+    if (!action) {
+      throw new NotFoundException(`AI Action #${id} not found`);
+    }
+
+    const updated = await this.prisma.aiAction.update({
+      where: { id },
+      data: { status: 'REJECTED' },
+    });
+
+    return { success: true, id: updated.id, status: updated.status };
   }
 }

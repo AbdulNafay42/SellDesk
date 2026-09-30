@@ -37,53 +37,7 @@ interface Consignment {
   bookingDate: string;
 }
 
-const initialConsignments: Consignment[] = [
-  {
-    id: 'ship-101',
-    cnNumber: 'TRX-99882211',
-    courier: 'TRAX',
-    orderNumber: 'ORD-1089',
-    customerName: 'Hamza Tariq',
-    customerPhone: '0312-7788990',
-    destinationCity: 'Rawalpindi',
-    address: 'House #45, Street 12, Sector F-8, Rawalpindi',
-    codAmountPKR: 3500,
-    weightKg: 0.8,
-    pieces: 1,
-    status: 'DELIVERED',
-    bookingDate: '2026-09-20 10:30',
-  },
-  {
-    id: 'ship-102',
-    cnNumber: 'LCS-44110022',
-    courier: 'LEOPARD',
-    orderNumber: 'ORD-1090',
-    customerName: 'Sana Malik',
-    customerPhone: '0301-4455667',
-    destinationCity: 'Lahore',
-    address: 'Flat 4B, Al-Hafeez Heights, Gulberg III, Lahore',
-    codAmountPKR: 4500,
-    weightKg: 1.2,
-    pieces: 1,
-    status: 'OUT_FOR_DELIVERY',
-    bookingDate: '2026-09-21 09:00',
-  },
-  {
-    id: 'ship-103',
-    cnNumber: 'CC-77665544',
-    courier: 'CALLCOURIER',
-    orderNumber: 'ORD-1091',
-    customerName: 'Bilal Ahmed',
-    customerPhone: '0346-1122334',
-    destinationCity: 'Multan',
-    address: 'House #12, Officers Colony, Bosan Road, Multan',
-    codAmountPKR: 2900,
-    weightKg: 0.5,
-    pieces: 1,
-    status: 'IN_TRANSIT',
-    bookingDate: '2026-09-21 12:00',
-  },
-];
+
 
 export default function ShippingPage() {
   const { activeBusinessId } = useAuth();

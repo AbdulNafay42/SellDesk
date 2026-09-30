@@ -21,7 +21,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const { memberships } = await login(email, password);
+      const { memberships, user: loggedUser } = await login(email, password);
+
+      if (loggedUser?.platformRole === 'SUPER_ADMIN') {
+        router.push('/admin');
+        return;
+      }
 
       if (!memberships || memberships.length === 0) {
         setError('Your account has no business memberships associated with it yet.');
@@ -29,7 +34,12 @@ export default function LoginPage() {
       }
 
       if (memberships.length === 1) {
-        router.push('/');
+        const biz = memberships[0].business || {};
+        if (biz.status === 'PENDING') {
+          router.push(`/signup/pending?businessName=${encodeURIComponent(biz.name || 'Your Business')}`);
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         router.push('/select-tenant');
       }

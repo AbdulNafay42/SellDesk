@@ -1,3 +1,4 @@
+require('dotenv').config({ path: 'apps/api/.env' });
 const http = require('http');
 
 const API_BASE = 'http://localhost:4000';

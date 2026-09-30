@@ -24,45 +24,26 @@ interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: 'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER';
+  role: 'OWNER' | 'ADMIN' | 'STAFF' | 'SALES_AGENT' | 'INVENTORY_MANAGER';
   status: 'ACTIVE' | 'INVITED';
   joinedDate: string;
 }
 
-const initialTeam: TeamMember[] = [
-  {
-    id: 'usr-1',
-    name: 'Abdul Nafay',
-    email: 'abdulnafay2005@gmail.com',
-    role: 'OWNER',
-    status: 'ACTIVE',
-    joinedDate: '2026-08-01',
-  },
-  {
-    id: 'usr-2',
-    name: 'Usman Ghani',
-    email: 'usman.sales@selldesk.pk',
-    role: 'SALES_AGENT',
-    status: 'ACTIVE',
-    joinedDate: '2026-08-15',
-  },
-  {
-    id: 'usr-3',
-    name: 'Hassan Raza',
-    email: 'hassan.inv@selldesk.pk',
-    role: 'INVENTORY_MANAGER',
-    status: 'ACTIVE',
-    joinedDate: '2026-09-02',
-  },
-  {
-    id: 'usr-4',
-    name: 'Zahra Fatima',
-    email: 'zahra.support@selldesk.pk',
-    role: 'SALES_AGENT',
-    status: 'INVITED',
-    joinedDate: '2026-09-20',
-  },
-];
+interface SubscriptionBilling {
+  currentPlan: 'STARTER' | 'GROWTH' | 'ENTERPRISE';
+  monthlyFeePKR: number;
+  billingCycle: string;
+  nextBillingDate: string;
+  usageMeters: {
+    ordersThisMonth: number;
+    maxOrders: number;
+    teamMembersCount: number;
+    maxTeamMembers: number;
+    aiResponsesUsed: number;
+    maxAiResponses: number;
+  };
+  invoices: Array<{ id: string; invoiceNumber?: string; date: string; amountPKR: number; status: string; pdfUrl: string }>;
+}
 
 export default function SettingsPage() {
   const { activeBusinessId } = useAuth();
@@ -79,57 +60,74 @@ export default function SettingsPage() {
 
   // Team state & invite modal
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [billing, setBilling] = useState<SubscriptionBilling | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [newMemberRole, setNewMemberRole] = useState<'OWNER' | 'ADMIN' | 'SALES_AGENT' | 'INVENTORY_MANAGER'>('SALES_AGENT');
+  const [newMemberRole, setNewMemberRole] = useState<'OWNER' | 'ADMIN' | 'STAFF' | 'SALES_AGENT' | 'INVENTORY_MANAGER'>('SALES_AGENT');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchSettings = async () => {
-      if (!activeBusinessId) return;
-      try {
-        const profile = await api.get<any>('/api/settings/business');
-        if (isMounted && profile) {
-          setBizName(profile.name || '');
-          setWhatsapp(profile.phone || '');
-          setCity(profile.city || '');
-          setAddress(profile.address || '');
-        }
-        const teamData = await api.get<TeamMember[]>('/api/settings/team');
-        if (isMounted && Array.isArray(teamData)) {
-          setTeam(teamData);
-        }
-      } catch (err) {
-        console.error('Failed to load settings:', err);
+  const fetchSettings = async () => {
+    if (!activeBusinessId) return;
+    try {
+      const profile = await api.get<any>('/api/settings/business');
+      if (profile) {
+        setBizName(profile.name || '');
+        setWhatsapp(profile.whatsappNumber || profile.phone || '');
+        setCity(profile.city || '');
+        setAddress(profile.address || '');
       }
-    };
-    fetchSettings();
-    return () => { isMounted = false; };
-  }, [activeBusinessId]);
-
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+      const teamData = await api.get<TeamMember[]>('/api/settings/team');
+      if (Array.isArray(teamData)) {
+        setTeam(teamData);
+      }
+      const billingData = await api.get<SubscriptionBilling>('/api/settings/billing');
+      if (billingData) {
+        setBilling(billingData);
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    }
   };
 
-  const handleInviteMember = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchSettings();
+  }, [activeBusinessId]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newMember: TeamMember = {
-      id: `usr-${Date.now()}`,
-      name: newMemberName || 'New Team Member',
-      email: newMemberEmail || 'member@selldesk.pk',
-      role: newMemberRole,
-      status: 'INVITED',
-      joinedDate: new Date().toISOString().split('T')[0],
-    };
-    setTeam([...team, newMember]);
-    setIsInviteModalOpen(false);
-    setNewMemberName('');
-    setNewMemberEmail('');
+    try {
+      await api.put('/api/settings/business', {
+        name: bizName,
+        city,
+        whatsappNumber: whatsapp,
+        category,
+        address,
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+      await fetchSettings();
+    } catch (err) {
+      console.error('Failed to update business profile:', err);
+    }
+  };
+
+  const handleInviteMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/api/settings/team/invite', {
+        name: newMemberName,
+        email: newMemberEmail,
+        role: newMemberRole,
+      });
+      setIsInviteModalOpen(false);
+      setNewMemberName('');
+      setNewMemberEmail('');
+      await fetchSettings();
+    } catch (err) {
+      console.error('Failed to invite team member:', err);
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -363,9 +361,9 @@ export default function SettingsPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <span className="badge badge-success" style={{ marginBottom: '0.5rem' }}>Active Plan</span>
-                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>SellDesk Growth SaaS Tier</h2>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF' }}>SellDesk {billing?.currentPlan || 'GROWTH'} SaaS Tier</h2>
                   <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
-                    Rs 6,999 / month • Auto-renews on October 1, 2026
+                    Rs {(billing?.monthlyFeePKR || 6999).toLocaleString()} / month • Auto-renews on {billing?.nextBillingDate || 'October 1, 2026'}
                   </p>
                 </div>
 
@@ -380,30 +378,30 @@ export default function SettingsPage() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>
                     <span>Monthly Orders</span>
-                    <span>141 / 1,000</span>
+                    <span>{billing?.usageMeters.ordersThisMonth || 0} / {(billing?.usageMeters.maxOrders || 1000).toLocaleString()}</span>
                   </div>
                   <div style={{ width: '100%', height: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '999px' }}>
-                    <div style={{ width: '14.1%', height: '100%', backgroundColor: '#10B981', borderRadius: '999px' }} />
+                    <div style={{ width: `${Math.min(100, Math.round(((billing?.usageMeters.ordersThisMonth || 0) / (billing?.usageMeters.maxOrders || 1000)) * 100))}%`, height: '100%', backgroundColor: '#10B981', borderRadius: '999px' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>
                     <span>Team Seats</span>
-                    <span>4 / 10 seats</span>
+                    <span>{billing?.usageMeters.teamMembersCount || 0} / {billing?.usageMeters.maxTeamMembers || 10} seats</span>
                   </div>
                   <div style={{ width: '100%', height: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '999px' }}>
-                    <div style={{ width: '40%', height: '100%', backgroundColor: '#6366F1', borderRadius: '999px' }} />
+                    <div style={{ width: `${Math.min(100, Math.round(((billing?.usageMeters.teamMembersCount || 0) / (billing?.usageMeters.maxTeamMembers || 10)) * 100))}%`, height: '100%', backgroundColor: '#6366F1', borderRadius: '999px' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>
                     <span>AI Assistant Queries</span>
-                    <span>412 / 5,000</span>
+                    <span>{billing?.usageMeters.aiResponsesUsed || 0} / {(billing?.usageMeters.maxAiResponses || 5000).toLocaleString()}</span>
                   </div>
                   <div style={{ width: '100%', height: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '999px' }}>
-                    <div style={{ width: '8.24%', height: '100%', backgroundColor: '#F59E0B', borderRadius: '999px' }} />
+                    <div style={{ width: `${Math.min(100, Math.round(((billing?.usageMeters.aiResponsesUsed || 0) / (billing?.usageMeters.maxAiResponses || 5000)) * 100))}%`, height: '100%', backgroundColor: '#F59E0B', borderRadius: '999px' }} />
                   </div>
                 </div>
               </div>
@@ -416,41 +414,42 @@ export default function SettingsPage() {
               </h3>
 
               <div className="table-responsive-container">
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
-                      <th style={{ padding: '0.625rem 1rem' }}>Invoice ID</th>
-                      <th style={{ padding: '0.625rem 1rem' }}>Date</th>
-                      <th style={{ padding: '0.625rem 1rem' }}>Amount (PKR)</th>
-                      <th style={{ padding: '0.625rem 1rem' }}>Status</th>
-                      <th style={{ padding: '0.625rem 1rem', textAlign: 'right' }}>Receipt</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#FFF' }}>INV-2026-09</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#9CA3AF' }}>2026-09-01</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#34D399' }}>Rs 6,999</td>
-                      <td style={{ padding: '0.75rem 1rem' }}><span className="badge badge-success">Paid</span></td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                        <button className="btn-secondary" style={{ padding: '0.3rem 0.625rem', fontSize: '0.75rem', gap: '0.25rem' }}>
-                          <Download style={{ width: '0.75rem', height: '0.75rem' }} /> PDF
-                        </button>
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#FFF' }}>INV-2026-08</td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#9CA3AF' }}>2026-08-01</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#34D399' }}>Rs 6,999</td>
-                      <td style={{ padding: '0.75rem 1rem' }}><span className="badge badge-success">Paid</span></td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                        <button className="btn-secondary" style={{ padding: '0.3rem 0.625rem', fontSize: '0.75rem', gap: '0.25rem' }}>
-                          <Download style={{ width: '0.75rem', height: '0.75rem' }} /> PDF
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {!billing?.invoices || billing.invoices.length === 0 ? (
+                  <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#9CA3AF' }}>
+                    <CreditCard style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 0.75rem auto', color: '#4B5563' }} />
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF' }}>0 Billing Receipts</div>
+                    <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>No billing invoices recorded for this business yet.</div>
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
+                        <th style={{ padding: '0.625rem 1rem' }}>Invoice ID</th>
+                        <th style={{ padding: '0.625rem 1rem' }}>Date</th>
+                        <th style={{ padding: '0.625rem 1rem' }}>Amount (PKR)</th>
+                        <th style={{ padding: '0.625rem 1rem' }}>Status</th>
+                        <th style={{ padding: '0.625rem 1rem', textAlign: 'right' }}>Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {billing.invoices.map((inv) => (
+                        <tr key={inv.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#FFF' }}>{inv.invoiceNumber || inv.id}</td>
+                          <td style={{ padding: '0.75rem 1rem', color: '#9CA3AF' }}>{inv.date}</td>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#34D399' }}>Rs {inv.amountPKR.toLocaleString()}</td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span className={`badge ${inv.status === 'PAID' ? 'badge-success' : 'badge-warning'}`}>{inv.status}</span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                            <button className="btn-secondary" style={{ padding: '0.3rem 0.625rem', fontSize: '0.75rem', gap: '0.25rem' }}>
+                              <Download style={{ width: '0.75rem', height: '0.75rem' }} /> PDF
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>

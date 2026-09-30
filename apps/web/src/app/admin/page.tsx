@@ -104,9 +104,21 @@ export default function AdminPortalPage() {
     }
   };
 
-  const handleApproveBusiness = async (id: string) => {
+  const [approvalModalData, setApprovalModalData] = useState<{
+    businessName: string;
+    invitationUrl: string;
+  } | null>(null);
+
+  const handleApproveBusiness = async (id: string, name: string) => {
     try {
-      await api.patch(`/api/admin/businesses/${id}/approve`, {});
+      const res = await api.patch<any>(`/api/admin/businesses/${id}/approve`, {});
+      if (res && res.invitation?.token) {
+        const url = `${window.location.origin}/invite/${res.invitation.token}`;
+        setApprovalModalData({
+          businessName: name,
+          invitationUrl: url,
+        });
+      }
       await fetchTenants();
     } catch (err) {
       console.error('Failed to approve business:', err);
@@ -260,7 +272,7 @@ export default function AdminPortalPage() {
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
                       {ten.status === 'PENDING' ? (
                         <button
-                          onClick={() => handleApproveBusiness(ten.id)}
+                          onClick={() => handleApproveBusiness(ten.id, ten.name)}
                           className="btn-primary"
                           style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
                         >
@@ -357,6 +369,52 @@ export default function AdminPortalPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Approval Success & Invitation Link Modal */}
+        {approvalModalData && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(0.5rem)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div className="glass-card" style={{ width: '100%', maxWidth: '30rem', padding: '1.75rem', backgroundColor: '#111827', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircle2 style={{ width: '1.25rem', height: '1.25rem' }} /> Store Approved Successfully!
+                </h3>
+                <button onClick={() => setApprovalModalData(null)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
+                  <X style={{ width: '1.25rem', height: '1.25rem' }} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
+                <strong style={{ color: '#FFF' }}>{approvalModalData.businessName}</strong> has been approved. The owner can now log in directly, or click this invitation link to set a new password:
+              </p>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.25rem', fontWeight: 700 }}>INVITATION LINK</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={approvalModalData.invitationUrl}
+                    className="input-glass"
+                    style={{ fontSize: '0.8rem', color: '#34D399' }}
+                  />
+                  <button
+                    onClick={() => navigator.clipboard.writeText(approvalModalData.invitationUrl)}
+                    className="btn-secondary"
+                    style={{ whiteSpace: 'nowrap', padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button onClick={() => setApprovalModalData(null)} className="btn-primary" style={{ padding: '0.5rem 1.25rem' }}>
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         )}

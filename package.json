@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm --prefix apps/web run dev -- -p 3000\" \"npm --prefix apps/api run dev\"",
-    "dev:web": "npm --prefix apps/web run dev -- -p 3000",
+    "dev": "concurrently \"npm --prefix apps/web run dev -- -p 3005\" \"npm --prefix apps/api run dev\"",
+    "dev:web": "npm --prefix apps/web run dev -- -p 3005",
     "dev:api": "npm --prefix apps/api run dev",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces"
