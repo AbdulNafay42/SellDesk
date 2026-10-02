@@ -1,5 +1,6 @@
 require('dotenv').config({ path: 'apps/api/.env' });
 const http = require('http');
+const crypto = require('crypto');
 
 function request(options, data) {
   return new Promise((resolve, reject) => {
@@ -193,13 +194,19 @@ async function runFoundationTests() {
       ],
     };
 
+    const appSecret = process.env.WHATSAPP_APP_SECRET || 'selldesk_app_secret_dev_key_2026';
+    const hmac1 = crypto.createHmac('sha256', appSecret).update(JSON.stringify(webhookPayload)).digest('hex');
+
     const webhookPost = await request(
       {
         hostname: 'localhost',
         port: 4000,
         path: '/api/whatsapp/webhook',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hub-signature-256': `sha256=${hmac1}`,
+        },
       },
       webhookPayload
     );
@@ -233,19 +240,24 @@ async function runFoundationTests() {
       ],
     };
 
+    const hmac2 = crypto.createHmac('sha256', appSecret).update(JSON.stringify(unknownWebhookPayload)).digest('hex');
+
     const unknownPost = await request(
       {
         hostname: 'localhost',
         port: 4000,
         path: '/api/whatsapp/webhook',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hub-signature-256': `sha256=${hmac2}`,
+        },
       },
       unknownWebhookPayload
     );
 
-    if (unknownPost.status === 200 || unknownPost.status === 201) {
-      console.log('  ✓ Webhook endpoint safely returns HTTP 200 to Meta while logging unknown tenant warning:', unknownPost.body);
+    if (unknownPost.status === 404) {
+      console.log('  ✓ Webhook endpoint correctly returns HTTP 404 Not Found for unknown tenant phone_number_id:', unknownPost.body);
     } else {
       console.error('  ✕ Unknown webhook handling FAILED:', unknownPost);
       process.exit(1);

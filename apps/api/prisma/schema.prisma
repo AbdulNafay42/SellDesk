@@ -65,6 +65,15 @@ enum MessageDirection {
 
 enum MessageType {
   TEXT
+  IMAGE
+  DOCUMENT
+  AUDIO
+  VIDEO
+  STICKER
+  INTERACTIVE
+  LOCATION
+  BUTTON
+  TEMPLATE
   OTHER
 }
 
@@ -74,6 +83,8 @@ enum MessageStatus {
   PROCESSED
   FAILED
   SENT
+  DELIVERED
+  READ
 }
 
 model User {

@@ -1,57 +1,55 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('--- DATABASE CONSISTENCY REPORT ---');
-  
-  const userCount = await prisma.user.count();
-  const businessCount = await prisma.business.count();
-  const memberCount = await prisma.businessMember.count();
+async function inspectDb() {
+  console.log('=== DATABASE INTEGRITY VERIFICATION ===');
+  const customerCount = await prisma.customer.count();
+  const conversationCount = await prisma.conversation.count();
+  const messageCount = await prisma.message.count();
 
-  console.log(`Total Users: ${userCount}`);
-  console.log(`Total Businesses: ${businessCount}`);
-  console.log(`Total BusinessMembers: ${memberCount}`);
+  console.log(`Total Customers: ${customerCount}`);
+  console.log(`Total Conversations: ${conversationCount}`);
+  console.log(`Total Messages: ${messageCount}`);
 
-  // Status breakdown
-  const statusCounts = await prisma.business.groupBy({
-    by: ['status'],
-    _count: true,
+  // Check composite uniqueness violations (if any)
+  const duplicateMessages = await prisma.$queryRaw`
+    SELECT "businessId", "externalMessageId", COUNT(*) 
+    FROM "Message" 
+    WHERE "externalMessageId" IS NOT NULL 
+    GROUP BY "businessId", "externalMessageId" 
+    HAVING COUNT(*) > 1
+  `;
+
+  const duplicateConversations = await prisma.$queryRaw`
+    SELECT "businessId", "channel", "externalContactId", COUNT(*) 
+    FROM "Conversation" 
+    GROUP BY "businessId", "channel", "externalContactId" 
+    HAVING COUNT(*) > 1
+  `;
+
+  console.log(`Duplicate Messages (by wamid): ${duplicateMessages.length}`);
+  console.log(`Duplicate Conversations (by channel+contact): ${duplicateConversations.length}`);
+
+  const sampleMessages = await prisma.message.findMany({
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      businessId: true,
+      externalMessageId: true,
+      direction: true,
+      type: true,
+      text: true,
+      status: true,
+    },
   });
-  console.log('\nBusiness Status Breakdown:');
-  statusCounts.forEach((s) => console.log(`  ${s.status}: ${s._count}`));
 
-  // Businesses per user
-  const userMembers = await prisma.businessMember.groupBy({
-    by: ['userId'],
-    _count: true,
-  });
-  console.log(`\nUsers with memberships: ${userMembers.length}`);
-  const multiBizUsers = userMembers.filter((m) => m._count > 1);
-  console.log(`Users with multiple businesses: ${multiBizUsers.length}`);
+  console.log('Sample Recent Messages:', JSON.stringify(sampleMessages, null, 2));
 
-  // Businesses with 0 members
-  const businesses = await prisma.business.findMany({
-    include: { _count: { select: { members: true } } },
-  });
-  const zeroMemberBiz = businesses.filter((b) => b._count.members === 0);
-  console.log(`Businesses with 0 members: ${zeroMemberBiz.length}`);
-
-  // Duplicate emails / slugs
-  const emails = await prisma.user.groupBy({
-    by: ['email'],
-    _count: true,
-    having: { email: { _count: { gt: 1 } } },
-  });
-  console.log(`Duplicate emails: ${emails.length}`);
-
-  const slugs = await prisma.business.groupBy({
-    by: ['slug'],
-    _count: true,
-    having: { slug: { _count: { gt: 1 } } },
-  });
-  console.log(`Duplicate slugs: ${slugs.length}`);
+  await prisma.$disconnect();
 }
 
-main()
-  .catch((e) => console.error(e))
-  .finally(() => prisma.$disconnect());
+inspectDb().catch((err) => {
+  console.error(err);
+  prisma.$disconnect();
+});

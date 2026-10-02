@@ -4,9 +4,11 @@ import {
   Post,
   Query,
   Body,
+  Headers,
   Req,
   UseGuards,
   ForbiddenException,
+  UnauthorizedException,
   Logger,
 } from '@nestjs/common';
 import { WhatsappService } from './whatsapp.service';
@@ -37,26 +39,17 @@ export class WhatsappController {
   }
 
   /**
-   * Public Incoming Meta Webhook Endpoint
+   * Public Incoming Meta Webhook Endpoint with HMAC SHA256 Signature Verification
    * POST /api/whatsapp/webhook
    */
   @Post('webhook')
-  async handleWebhook(@Body() payload: MetaWebhookPayload) {
-    this.logger.log(`Received WhatsApp Webhook Payload: ${JSON.stringify(payload)}`);
-
-    // Extract phone_number_id if present in Meta payload
-    const phoneNumberId = payload?.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
-
-    if (phoneNumberId) {
-      try {
-        const tenantResolution = await this.whatsappService.resolveBusinessByPhoneNumberId(phoneNumberId);
-        this.logger.log(`Resolved Webhook Tenant Context: Business ID ${tenantResolution.businessId} for phone_number_id ${phoneNumberId}`);
-      } catch (err: any) {
-        this.logger.warn(`Webhook Tenant Resolution Warning: ${err.message}`);
-      }
-    }
-
-    return { status: 'RECEIVED' };
+  async handleWebhook(
+    @Req() req: any,
+    @Headers('x-hub-signature-256') signatureHeader: string,
+    @Body() payload: MetaWebhookPayload,
+  ) {
+    const rawBody = req.rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(payload));
+    return this.whatsappService.processInboundWebhook(rawBody, signatureHeader, payload);
   }
 
   /**
