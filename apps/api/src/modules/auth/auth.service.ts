@@ -15,27 +15,6 @@ export interface AuthUserPayload {
 
 @Injectable()
 export class AuthService {
-  // Pre-hashed development passwords for testing fallback
-  // "password123" -> bcrypt hash
-  private mockDevUsers = [
-    {
-      id: 'usr-1',
-      email: 'abdulnafay2005@gmail.com',
-      fullName: 'Abdul Nafay',
-      platformRole: 'SUPER_ADMIN',
-      passwordHash: '$2a$10$eE61K1zWbTqX7T4.Wb0k2e6P1oJ1zJ1zJ1zJ1zJ1zJ1zJ1zJ1zJ1z', // Dev hash or fallback comparison
-      plainDevPassword: 'password123',
-    },
-    {
-      id: 'usr-2',
-      email: 'kamran@khaadi.com.pk',
-      fullName: 'Kamran Akmal',
-      platformRole: 'USER',
-      passwordHash: '$2a$10$eE61K1zWbTqX7T4.Wb0k2e6P1oJ1zJ1zJ1zJ1zJ1zJ1zJ1zJ1zJ1z',
-      plainDevPassword: 'password123',
-    },
-  ];
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,

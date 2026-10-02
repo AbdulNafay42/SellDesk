@@ -50,7 +50,10 @@ export class ProductsService {
         basePrice,
         sku: dto.sku,
         variants: {
-          create: dto.variants || [],
+          create: (dto.variants || []).map((v) => ({
+            ...v,
+            businessId: dto.businessId,
+          })),
         },
       },
       include: { variants: true },

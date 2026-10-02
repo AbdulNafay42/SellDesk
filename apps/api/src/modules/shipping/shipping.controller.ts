@@ -18,7 +18,7 @@ export class ShippingController {
     return this.shippingService.findByCn(cnNumber, req.tenantId);
   }
 
-  @Post('book')
+  @Post(['book', ''])
   async bookConsignment(
     @Body()
     body: {

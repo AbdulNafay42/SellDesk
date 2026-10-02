@@ -50,8 +50,24 @@ export default function FollowupsPage() {
     return () => { isMounted = false; };
   }, [activeBusinessId]);
 
-  const handleSendFollowup = (id: string) => {
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: 'SENT' } : l)));
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleSendFollowup = async (id: string) => {
+    if (sendingId) return;
+    setSendingId(id);
+    setErrorMsg(null);
+
+    try {
+      const res = await api.post<any>(`/api/followups/${id}/trigger`);
+      const updatedStatus = res.lead?.status || 'SENT';
+      setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: updatedStatus } : l)));
+    } catch (err: any) {
+      console.error('Failed to trigger follow-up:', err);
+      setErrorMsg(err?.message || 'Failed to send follow-up reminder. Please try again.');
+    } finally {
+      setSendingId(null);
+    }
   };
 
   const filteredLeads = leads.filter(
@@ -119,6 +135,13 @@ export default function FollowupsPage() {
           </div>
         </div>
 
+        {/* Error Banner */}
+        {errorMsg && (
+          <div style={{ color: '#EF4444', fontSize: '0.875rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1.25rem' }}>
+            {errorMsg}
+          </div>
+        )}
+
         {/* Lead Recovery Cards List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {filteredLeads.length === 0 ? (
@@ -160,9 +183,14 @@ export default function FollowupsPage() {
                 {/* Action Button */}
                 <div>
                   {lead.status === 'PENDING' ? (
-                    <button onClick={() => handleSendFollowup(lead.id)} className="btn-primary" style={{ whiteSpace: 'nowrap', padding: '0.75rem 1.25rem' }}>
+                    <button
+                      onClick={() => handleSendFollowup(lead.id)}
+                      className="btn-primary"
+                      disabled={sendingId === lead.id}
+                      style={{ whiteSpace: 'nowrap', padding: '0.75rem 1.25rem' }}
+                    >
                       <Send style={{ width: '1rem', height: '1rem' }} />
-                      1-Click Send WhatsApp Follow-up
+                      {sendingId === lead.id ? 'Sending...' : '1-Click Send WhatsApp Follow-up'}
                     </button>
                   ) : (
                     <span className="badge badge-success" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>

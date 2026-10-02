@@ -28,11 +28,11 @@ export class ReturnsService {
     });
   }
 
-  async restockReturn(id: string, businessId?: string) {
+  async restockReturn(id: string, businessId: string) {
     const ret = await this.prisma.returnRequest.findFirst({
       where: {
         id,
-        ...(businessId ? { businessId } : {}),
+        businessId,
       },
     });
 

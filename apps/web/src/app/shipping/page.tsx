@@ -73,35 +73,43 @@ export default function ShippingPage() {
   // Label Printer Modal state
   const [labelConsignment, setLabelConsignment] = useState<Consignment | null>(null);
 
-  const handleBookConsignment = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleBookConsignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    const prefix = selectedCourier === 'TRAX' ? 'TRX' : selectedCourier === 'LEOPARD' ? 'LCS' : 'CC';
-    const randomNum = Math.floor(10000000 + Math.random() * 90000000);
-    const newCn = `${prefix}-${randomNum}`;
+    if (isSubmitting) return;
 
-    const newShipment: Consignment = {
-      id: `ship-${Date.now()}`,
-      cnNumber: newCn,
-      courier: selectedCourier,
-      orderNumber: orderNum || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      customerName: custName || 'Walk-in Customer',
-      customerPhone: custPhone || '0300-0000000',
-      destinationCity: destCity,
-      address: deliveryAddress || 'General Delivery Address',
-      codAmountPKR: Number(codAmount),
-      weightKg: 0.8,
-      pieces: 1,
-      status: 'BOOKED',
-      bookingDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    };
+    setIsSubmitting(true);
+    setErrorMsg(null);
 
-    setConsignments([newShipment, ...consignments]);
-    setIsBookingModalOpen(false);
-    // Reset form
-    setOrderNum('');
-    setCustName('');
-    setCustPhone('');
-    setDeliveryAddress('');
+    try {
+      const created = await api.post<Consignment>('/api/shipping/book', {
+        courier: selectedCourier,
+        orderNumber: orderNum || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName: custName || 'Walk-in Customer',
+        customerPhone: custPhone || '0300-0000000',
+        destinationCity: destCity,
+        address: deliveryAddress || 'General Delivery Address',
+        codAmountPKR: Number(codAmount),
+        weightKg: 0.8,
+        pieces: 1,
+      });
+
+      setConsignments((prev) => [created, ...prev]);
+      setIsBookingModalOpen(false);
+
+      // Reset form
+      setOrderNum('');
+      setCustName('');
+      setCustPhone('');
+      setDeliveryAddress('');
+    } catch (err: any) {
+      console.error('Failed to book consignment:', err);
+      setErrorMsg(err?.message || 'Failed to book consignment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredConsignments = consignments.filter(
@@ -351,12 +359,18 @@ export default function ShippingPage() {
                   <textarea className="input-glass" rows={2} placeholder="House #, Street #, Area, City..." value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} required />
                 </div>
 
+                {errorMsg && (
+                  <div style={{ color: '#EF4444', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 0.75rem', borderRadius: '0.375rem' }}>
+                    {errorMsg}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                  <button type="button" onClick={() => setIsBookingModalOpen(false)} className="btn-secondary">
+                  <button type="button" onClick={() => setIsBookingModalOpen(false)} className="btn-secondary" disabled={isSubmitting}>
                     Cancel
                   </button>
-                  <button type="submit" className="btn-primary">
-                    <Send style={{ width: '1rem', height: '1rem' }} /> Generate Consignment (CN#)
+                  <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                    <Send style={{ width: '1rem', height: '1rem' }} /> {isSubmitting ? 'Creating...' : 'Generate Consignment (CN#)'}
                   </button>
                 </div>
               </form>

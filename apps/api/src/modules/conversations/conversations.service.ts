@@ -13,20 +13,58 @@ export class ConversationsService {
 
 
   async findAll(businessId: string) {
-    return await this.prisma.conversation.findMany({
+    const list = await this.prisma.conversation.findMany({
       where: { businessId },
       include: { customer: true, messages: { orderBy: { createdAt: 'asc' } } },
       orderBy: { updatedAt: 'desc' },
     });
+
+    return list.map((c) => {
+      const lastMsg = c.messages.length > 0 ? c.messages[c.messages.length - 1] : null;
+      return {
+        id: c.id,
+        customerName: c.customer?.fullName || 'Customer',
+        customerPhone: c.customer?.phoneNumber || c.externalContactId || 'N/A',
+        city: c.customer?.city || 'Pakistan',
+        lastMessage: lastMsg?.text || 'No messages yet',
+        lastMessageTime: lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        unreadCount: 0,
+        intentTag: 'ORDER_INQUIRY',
+        intentConfidence: 0.95,
+        messages: c.messages.map((m) => ({
+          id: m.id,
+          sender: m.direction === 'OUTBOUND' ? 'SELLER' : 'CUSTOMER',
+          text: m.text || '',
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        })),
+      };
+    });
   }
 
   async findOne(id: string, businessId: string) {
-    const conv = await this.prisma.conversation.findFirst({
+    const c = await this.prisma.conversation.findFirst({
       where: { id, businessId },
       include: { customer: true, messages: { orderBy: { createdAt: 'asc' } } },
     });
-    if (!conv) throw new NotFoundException('Conversation thread not found');
-    return conv;
+    if (!c) throw new NotFoundException('Conversation thread not found');
+    const lastMsg = c.messages.length > 0 ? c.messages[c.messages.length - 1] : null;
+    return {
+      id: c.id,
+      customerName: c.customer?.fullName || 'Customer',
+      customerPhone: c.customer?.phoneNumber || c.externalContactId || 'N/A',
+      city: c.customer?.city || 'Pakistan',
+      lastMessage: lastMsg?.text || 'No messages yet',
+      lastMessageTime: lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      unreadCount: 0,
+      intentTag: 'ORDER_INQUIRY',
+      intentConfidence: 0.95,
+      messages: c.messages.map((m) => ({
+        id: m.id,
+        sender: m.direction === 'OUTBOUND' ? 'SELLER' : 'CUSTOMER',
+        text: m.text || '',
+        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      })),
+    };
   }
 
   async sendReply(dto: SendReplyDto, businessId?: string) {

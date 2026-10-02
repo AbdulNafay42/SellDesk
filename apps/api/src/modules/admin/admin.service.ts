@@ -227,12 +227,14 @@ export class AdminService {
     const slug = `${baseSlug || 'business'}-${Date.now().toString(36)}`;
     const normalizedEmail = dto.ownerEmail.toLowerCase().trim();
 
+    const crypto = require('crypto');
     let user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
 
     if (!user) {
-      const defaultPasswordHash = bcrypt.hashSync('password123', 10);
+      const randomPassword = crypto.randomBytes(24).toString('hex');
+      const defaultPasswordHash = bcrypt.hashSync(randomPassword, 10);
       user = await this.prisma.user.create({
         data: {
           email: normalizedEmail,
@@ -261,6 +263,20 @@ export class AdminService {
         userId: user.id,
         businessId: business.id,
         role: 'OWNER',
+      },
+    });
+
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 48 * 3600 * 1000);
+
+    await this.prisma.invitationToken.create({
+      data: {
+        token: invitationToken,
+        email: user.email,
+        userId: user.id,
+        businessId: business.id,
+        role: 'OWNER',
+        expiresAt,
       },
     });
 

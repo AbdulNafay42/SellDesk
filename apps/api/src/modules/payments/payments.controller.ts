@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { PaymentsService, PaymentRecord } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../auth/guards/tenant.guard';
@@ -14,11 +14,12 @@ export class PaymentsController {
   }
 
   @Post(':id/verify')
+  @Patch(':id/verify')
   async verifyPayment(
     @Param('id') id: string,
     @Body() body: { trxId?: string },
     @Req() req: any,
   ): Promise<PaymentRecord> {
-    return this.paymentsService.verifyPayment(id, body?.trxId, req.tenantId);
+    return this.paymentsService.verifyPayment(id, req.tenantId, body?.trxId);
   }
 }

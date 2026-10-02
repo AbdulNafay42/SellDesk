@@ -12,11 +12,11 @@ export class FollowupsService {
     });
   }
 
-  async triggerFollowup(id: string, businessId?: string) {
+  async triggerFollowup(id: string, businessId: string) {
     const lead = await this.prisma.followupLead.findFirst({
       where: {
         id,
-        ...(businessId ? { businessId } : {}),
+        businessId,
       },
     });
 

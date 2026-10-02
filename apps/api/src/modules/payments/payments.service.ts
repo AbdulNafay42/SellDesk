@@ -26,11 +26,11 @@ export class PaymentsService {
     });
   }
 
-  async verifyPayment(id: string, trxId?: string, businessId?: string) {
+  async verifyPayment(id: string, businessId: string, trxId?: string) {
     const payment = await this.prisma.paymentRecord.findFirst({
       where: {
         id,
-        ...(businessId ? { businessId } : {}),
+        businessId,
       },
     });
 

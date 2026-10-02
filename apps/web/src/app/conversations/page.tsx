@@ -95,6 +95,8 @@ export default function ConversationsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string>('');
   const [replyText, setReplyText] = useState<string>('');
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [search, setSearch] = useState<string>('');
   const [isOrderModalOpen, setIsOrderModalOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
@@ -122,32 +124,47 @@ export default function ConversationsPage() {
 
   const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
 
-  const handleSendReply = (e: React.FormEvent) => {
+  const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || isSending || !activeConvId) return;
 
-    const newMsg: Message = {
-      id: `m-${Date.now()}`,
-      sender: 'SELLER',
-      text: replyText,
-      time: 'Just now',
-    };
+    setIsSending(true);
+    setErrorMsg(null);
 
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === activeConvId) {
-          return {
-            ...c,
-            lastMessage: replyText,
-            lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      })
-    );
+    try {
+      const res = await api.post<{ id: string; sender: 'SELLER'; text: string; time: string }>(
+        `/api/conversations/${activeConvId}/reply`,
+        { messageText: replyText }
+      );
 
-    setReplyText('');
+      const newMsg: Message = {
+        id: res.id || `m-${Date.now()}`,
+        sender: 'SELLER',
+        text: res.text || replyText,
+        time: res.time || 'Just now',
+      };
+
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c.id === activeConvId) {
+            return {
+              ...c,
+              lastMessage: newMsg.text,
+              lastMessageTime: newMsg.time,
+              messages: [...c.messages, newMsg],
+            };
+          }
+          return c;
+        })
+      );
+
+      setReplyText('');
+    } catch (err: any) {
+      console.error('Failed to send reply:', err);
+      setErrorMsg(err?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const filteredConversations = conversations.filter(
@@ -321,19 +338,27 @@ export default function ConversationsPage() {
           </div>
 
           {/* Reply Composer Bar */}
-          <form onSubmit={handleSendReply} style={{ padding: '1rem 1.5rem', borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '0.75rem', background: 'rgba(17, 24, 39, 0.8)' }}>
-            <input
-              type="text"
-              placeholder="Type your WhatsApp reply..."
-              className="input-glass"
-              style={{ flex: 1 }}
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-            />
-            <button type="submit" className="btn-primary" style={{ padding: '0 1.25rem' }}>
-              <Send style={{ width: '1rem', height: '1rem' }} /> Send
-            </button>
-          </form>
+          <div style={{ padding: '1rem 1.5rem', borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)', background: 'rgba(17, 24, 39, 0.8)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {errorMsg && (
+              <div style={{ color: '#EF4444', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.375rem 0.75rem', borderRadius: '0.375rem' }}>
+                {errorMsg}
+              </div>
+            )}
+            <form onSubmit={handleSendReply} style={{ display: 'flex', gap: '0.75rem' }}>
+              <input
+                type="text"
+                placeholder="Type your WhatsApp reply..."
+                className="input-glass"
+                style={{ flex: 1 }}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                disabled={isSending}
+              />
+              <button type="submit" className="btn-primary" style={{ padding: '0 1.25rem' }} disabled={isSending}>
+                <Send style={{ width: '1rem', height: '1rem' }} /> {isSending ? 'Sending...' : 'Send'}
+              </button>
+            </form>
+          </div>
         </div>
         )}
 

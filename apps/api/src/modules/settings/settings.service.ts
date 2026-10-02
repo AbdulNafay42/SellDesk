@@ -118,7 +118,9 @@ export class SettingsService {
     });
 
     if (!user) {
-      const defaultPasswordHash = bcrypt.hashSync('password123', 10);
+      const crypto = require('crypto');
+      const randomPassword = crypto.randomBytes(24).toString('hex');
+      const defaultPasswordHash = bcrypt.hashSync(randomPassword, 10);
       user = await this.prisma.user.create({
         data: {
           email: normalizedEmail,

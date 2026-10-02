@@ -35,7 +35,10 @@ export default function AiEnginePage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Settings state
+  const [actionProcessingId, setActionProcessingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Settings state (UI presets - backend persistence not yet implemented in DB schema)
   const [autoReplyEnabled, setAutoReplyEnabled] = useState(true);
   const [ragGuardrailsEnabled, setRagGuardrailsEnabled] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.85);
@@ -45,8 +48,9 @@ export default function AiEnginePage() {
     try {
       const data = await api.get<PendingAction[]>('/api/ai/actions');
       setActions(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch AI pending actions:', err);
+      setErrorMsg(err?.message || 'Failed to load AI actions');
     }
   };
 
@@ -55,25 +59,39 @@ export default function AiEnginePage() {
   }, [activeBusinessId]);
 
   const handleApprove = async (id: string) => {
+    if (actionProcessingId) return;
+    setActionProcessingId(id);
+    setErrorMsg(null);
     try {
       await api.post(`/api/ai/actions/${id}/approve`, {});
       await fetchActions();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to approve AI action:', err);
+      setErrorMsg(err?.message || 'Failed to approve AI action');
+    } finally {
+      setActionProcessingId(null);
     }
   };
 
   const handleReject = async (id: string) => {
+    if (actionProcessingId) return;
+    setActionProcessingId(id);
+    setErrorMsg(null);
     try {
       await api.post(`/api/ai/actions/${id}/reject`, {});
       await fetchActions();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to reject AI action:', err);
+      setErrorMsg(err?.message || 'Failed to reject AI action');
+    } finally {
+      setActionProcessingId(null);
     }
   };
 
   const runSimulation = async () => {
+    if (isSimulating) return;
     setIsSimulating(true);
+    setErrorMsg(null);
     try {
       const extractRes = await api.post<any>('/api/ai/extract-order', { text: simText });
       const replyRes = await api.post<any>('/api/ai/generate-reply', { text: simText });
@@ -85,8 +103,9 @@ export default function AiEnginePage() {
         extractedOrder: extractRes.extractedOrder || {},
         aiSuggestedReply: replyRes.reply || 'Walaikum Assalam! Order process karne ke liye tayyar hai.',
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Simulation error:', err);
+      setErrorMsg(err?.message || 'Simulation failed');
     } finally {
       setIsSimulating(false);
     }
@@ -187,10 +206,10 @@ export default function AiEnginePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {act.status === 'PENDING_APPROVAL' ? (
                       <>
-                        <button onClick={() => handleApprove(act.id)} className="btn-primary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem' }}>
-                          <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem' }} /> Approve & Create
+                        <button onClick={() => handleApprove(act.id)} className="btn-primary" disabled={actionProcessingId === act.id} style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem' }}>
+                          <CheckCircle2 style={{ width: '0.875rem', height: '0.875rem' }} /> {actionProcessingId === act.id ? 'Processing...' : 'Approve & Create'}
                         </button>
-                        <button onClick={() => handleReject(act.id)} className="btn-secondary" style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem', color: '#FDA4AF' }}>
+                        <button onClick={() => handleReject(act.id)} className="btn-secondary" disabled={actionProcessingId === act.id} style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem', color: '#FDA4AF' }}>
                           <XCircle style={{ width: '0.875rem', height: '0.875rem' }} /> Reject
                         </button>
                       </>

@@ -105,7 +105,9 @@ model Business {
 
   members         BusinessMember[]
   invitations     InvitationToken[]
+  categories      Category[]
   products        Product[]
+  variants        ProductVariant[]
   customers       Customer[]
   orders          Order[]
   whatsAppConfig  WhatsAppConfig?
@@ -168,9 +170,17 @@ model BusinessMember {
 
 model Category {
   id          String    @id @default(uuid())
+  businessId  String
   name        String
   slug        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
   products    Product[]
+
+  @@unique([businessId, slug])
+  @@index([businessId])
 }
 
 model Product {
@@ -194,18 +204,22 @@ model Product {
 }
 
 model ProductVariant {
-  id        String   @id @default(uuid())
-  productId String
-  size      String?  // S, M, L, XL, XXL, Custom
-  color     String?  // Black, White, Red, etc.
-  sku       String   @unique
-  price     Float
-  stock     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  businessId String
+  productId  String
+  size       String?  // S, M, L, XL, XXL, Custom
+  color      String?  // Black, White, Red, etc.
+  sku        String
+  price      Float
+  stock      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@unique([businessId, sku])
+  @@index([businessId])
   @@index([productId])
 }
 
@@ -230,7 +244,7 @@ model Order {
   id            String        @id @default(uuid())
   businessId    String
   customerId    String
-  orderNumber   String        @unique
+  orderNumber   String
   status        OrderStatus   @default(NEW)
   paymentStatus PaymentStatus @default(PENDING)
   paymentMethod String        @default("COD") // COD, BankTransfer, EasyPaisa, JazzCash
@@ -244,6 +258,7 @@ model Order {
   business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer      Customer      @relation(fields: [customerId], references: [id])
 
+  @@unique([businessId, orderNumber])
   @@index([businessId])
 }
 
@@ -330,7 +345,7 @@ model PaymentRecord {
 model Consignment {
   id              String   @id @default(uuid())
   businessId      String
-  cnNumber        String   @unique
+  cnNumber        String
   courier         String   // TRAX, LEOPARD, CALLCOURIER, TCS
   orderNumber     String
   customerName    String
@@ -348,13 +363,14 @@ model Consignment {
 
   business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  @@unique([businessId, cnNumber])
   @@index([businessId])
 }
 
 model ReturnRequest {
   id            String   @id @default(uuid())
   businessId    String
-  returnNumber  String   @unique
+  returnNumber  String
   orderNumber   String
   customerName  String
   customerPhone String
@@ -370,6 +386,7 @@ model ReturnRequest {
 
   business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  @@unique([businessId, returnNumber])
   @@index([businessId])
 }
 
@@ -413,7 +430,7 @@ model AiAction {
 model Invoice {
   id            String   @id @default(uuid())
   businessId    String
-  invoiceNumber String   @unique
+  invoiceNumber String
   amountPKR     Float
   date          String
   status        String   @default("PAID") // PAID, PENDING, UNPAID
@@ -423,6 +440,7 @@ model Invoice {
 
   business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  @@unique([businessId, invoiceNumber])
   @@index([businessId])
 }
 

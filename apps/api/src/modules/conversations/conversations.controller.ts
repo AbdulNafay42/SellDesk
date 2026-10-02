@@ -18,12 +18,13 @@ export class ConversationsController {
     return this.conversationsService.findOne(id, req.tenantId);
   }
 
-  @Post(':id/reply')
+  @Post([':id/reply', ':id/messages'])
   async sendReply(
     @Param('id') conversationId: string,
-    @Body('messageText') messageText: string,
+    @Body() body: { messageText?: string; text?: string },
     @Req() req: any,
   ) {
-    return this.conversationsService.sendReply({ conversationId, messageText }, req.tenantId);
+    const text = body.messageText || body.text || '';
+    return this.conversationsService.sendReply({ conversationId, messageText: text }, req.tenantId);
   }
 }

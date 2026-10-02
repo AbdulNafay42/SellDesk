@@ -13,6 +13,7 @@
     "apps/*"
   ],
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.4.0"
   }

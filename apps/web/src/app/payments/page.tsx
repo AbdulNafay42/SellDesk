@@ -62,17 +62,31 @@ export default function PaymentsPage() {
     return () => { isMounted = false; };
   }, [activeBusinessId]);
 
-  const handleVerify = () => {
-    if (!selectedPayment) return;
-    setPayments((prev) =>
-      prev.map((p) =>
-        p.id === selectedPayment.id
-          ? { ...p, status: 'PAID', trxId: trxInput || p.trxId || 'MANUAL-VERIFIED', notes: 'Verified manually by Seller' }
-          : p
-      )
-    );
-    setSelectedPayment(null);
-    setTrxInput('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleVerify = async () => {
+    if (!selectedPayment || isVerifying) return;
+    setIsVerifying(true);
+    setErrorMsg(null);
+
+    try {
+      const updated = await api.post<PaymentRecord>(`/api/payments/${selectedPayment.id}/verify`, {
+        trxId: trxInput || 'MANUAL-VERIFIED',
+      });
+
+      setPayments((prev) =>
+        prev.map((p) => (p.id === selectedPayment.id ? { ...p, ...updated } : p))
+      );
+
+      setSelectedPayment(null);
+      setTrxInput('');
+    } catch (err: any) {
+      console.error('Failed to verify payment:', err);
+      setErrorMsg(err?.message || 'Failed to verify payment. Please try again.');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const filteredPayments = payments.filter((p) => {
@@ -323,15 +337,21 @@ export default function PaymentsPage() {
                     <strong>Note:</strong> {selectedPayment.notes}
                   </div>
                 )}
+
+                {errorMsg && (
+                  <div style={{ color: '#EF4444', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 0.75rem', borderRadius: '0.375rem' }}>
+                    {errorMsg}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                <button onClick={() => setSelectedPayment(null)} className="btn-secondary">
+                <button onClick={() => setSelectedPayment(null)} className="btn-secondary" disabled={isVerifying}>
                   Close
                 </button>
                 {selectedPayment.status === 'PENDING_VERIFICATION' && (
-                  <button onClick={handleVerify} className="btn-primary">
-                    <Check style={{ width: '1rem', height: '1rem' }} /> Mark Verified & Paid
+                  <button onClick={handleVerify} className="btn-primary" disabled={isVerifying}>
+                    <Check style={{ width: '1rem', height: '1rem' }} /> {isVerifying ? 'Verifying...' : 'Mark Verified & Paid'}
                   </button>
                 )}
               </div>

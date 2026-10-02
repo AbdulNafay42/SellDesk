@@ -1,32 +1,57 @@
-process.env.DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/selldesk?schema=public";
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('=== USERS IN DB ===');
-  const users = await prisma.user.findMany();
-  console.log(`Total users in DB: ${users.length}`);
-  users.forEach((u) => {
-    console.log(`User: ${u.email} | Role: ${u.platformRole}`);
-  });
+  console.log('--- DATABASE CONSISTENCY REPORT ---');
+  
+  const userCount = await prisma.user.count();
+  const businessCount = await prisma.business.count();
+  const memberCount = await prisma.businessMember.count();
 
-  console.log('\n=== BUSINESSES IN DB ===');
-  const businesses = await prisma.business.findMany();
-  console.log(`Total businesses in DB: ${businesses.length}`);
-  businesses.forEach((b) => {
-    console.log(`Biz: ${b.name} (${b.id}) | Status: ${b.status}`);
-  });
+  console.log(`Total Users: ${userCount}`);
+  console.log(`Total Businesses: ${businessCount}`);
+  console.log(`Total BusinessMembers: ${memberCount}`);
 
-  console.log('\n=== MEMBERSHIPS IN DB ===');
-  const members = await prisma.businessMember.findMany({
-    include: { user: true, business: true }
+  // Status breakdown
+  const statusCounts = await prisma.business.groupBy({
+    by: ['status'],
+    _count: true,
   });
-  console.log(`Total memberships in DB: ${members.length}`);
-  members.forEach((m) => {
-    console.log(`Mem: User ${m.user.email} -> Biz ${m.business.name} (${m.role})`);
-  });
+  console.log('\nBusiness Status Breakdown:');
+  statusCounts.forEach((s) => console.log(`  ${s.status}: ${s._count}`));
 
-  await prisma.$disconnect();
+  // Businesses per user
+  const userMembers = await prisma.businessMember.groupBy({
+    by: ['userId'],
+    _count: true,
+  });
+  console.log(`\nUsers with memberships: ${userMembers.length}`);
+  const multiBizUsers = userMembers.filter((m) => m._count > 1);
+  console.log(`Users with multiple businesses: ${multiBizUsers.length}`);
+
+  // Businesses with 0 members
+  const businesses = await prisma.business.findMany({
+    include: { _count: { select: { members: true } } },
+  });
+  const zeroMemberBiz = businesses.filter((b) => b._count.members === 0);
+  console.log(`Businesses with 0 members: ${zeroMemberBiz.length}`);
+
+  // Duplicate emails / slugs
+  const emails = await prisma.user.groupBy({
+    by: ['email'],
+    _count: true,
+    having: { email: { _count: { gt: 1 } } },
+  });
+  console.log(`Duplicate emails: ${emails.length}`);
+
+  const slugs = await prisma.business.groupBy({
+    by: ['slug'],
+    _count: true,
+    having: { slug: { _count: { gt: 1 } } },
+  });
+  console.log(`Duplicate slugs: ${slugs.length}`);
 }
 
-main().catch(console.error);
+main()
+  .catch((e) => console.error(e))
+  .finally(() => prisma.$disconnect());

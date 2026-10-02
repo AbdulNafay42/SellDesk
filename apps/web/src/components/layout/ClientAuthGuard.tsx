@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2, ShoppingBag } from 'lucide-react';
 
-const PUBLIC_ROUTES = ['/login', '/signup', '/signup/pending', '/invite'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/signup/pending', '/signup/rejected', '/signup/suspended', '/invite'];
 
 export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/';
@@ -29,16 +29,26 @@ export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Public routes (Landing page "/", Login, Signup, Pending) are accessible to all
+    // Public routes (Landing page "/", Login, Signup, Pending, Rejected, Suspended) are accessible to all
     if (isPublic) {
       return;
     }
 
     // Authenticated Protected Routes Logic:
-    // 1. If business status is PENDING, restrict access to seller portal routes
-    if (activeBusiness && activeBusiness.status === 'PENDING') {
-      router.push(`/signup/pending?businessName=${encodeURIComponent(activeBusiness.name || 'Your Business')}`);
-      return;
+    // 1. If business status is PENDING, REJECTED, or SUSPENDED, restrict access to seller portal routes
+    if (activeBusiness) {
+      if (activeBusiness.status === 'PENDING') {
+        router.push(`/signup/pending?businessName=${encodeURIComponent(activeBusiness.name || 'Your Business')}`);
+        return;
+      }
+      if (activeBusiness.status === 'REJECTED') {
+        router.push(`/signup/rejected?businessName=${encodeURIComponent(activeBusiness.name || 'Your Business')}`);
+        return;
+      }
+      if (activeBusiness.status === 'SUSPENDED') {
+        router.push(`/signup/suspended?businessName=${encodeURIComponent(activeBusiness.name || 'Your Business')}`);
+        return;
+      }
     }
 
     // 2. If user has no active tenant selected, redirect to select-tenant

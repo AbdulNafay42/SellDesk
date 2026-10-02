@@ -55,10 +55,25 @@ export default function ReturnsPage() {
     return () => { isMounted = false; };
   }, [activeBusinessId]);
 
-  const handleRestock = (id: string) => {
-    setReturns((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: 'RESTOCKED', restocked: true } : r))
-    );
+  const [restockingId, setRestockingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleRestock = async (id: string) => {
+    if (restockingId) return;
+    setRestockingId(id);
+    setErrorMsg(null);
+
+    try {
+      const updated = await api.post<ReturnRequest>(`/api/returns/${id}/restock`);
+      setReturns((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, ...updated, status: 'RESTOCKED', restocked: true } : r))
+      );
+    } catch (err: any) {
+      console.error('Failed to restock return:', err);
+      setErrorMsg(err?.message || 'Failed to restock return item. Please try again.');
+    } finally {
+      setRestockingId(null);
+    }
   };
 
   const filteredReturns = returns.filter(
@@ -146,6 +161,13 @@ export default function ReturnsPage() {
           </div>
         </div>
 
+        {/* Error Banner */}
+        {errorMsg && (
+          <div style={{ color: '#EF4444', fontSize: '0.875rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1.25rem' }}>
+            {errorMsg}
+          </div>
+        )}
+
         {/* Returns Table */}
         <div className="glass-card" style={{ padding: '1.5rem' }}>
           <div className="table-responsive-container">
@@ -191,9 +213,10 @@ export default function ReturnsPage() {
                         <button
                           onClick={() => handleRestock(ret.id)}
                           className="btn-primary"
+                          disabled={restockingId === ret.id}
                           style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', gap: '0.25rem' }}
                         >
-                          <Boxes style={{ width: '0.875rem', height: '0.875rem' }} /> 1-Click Restock
+                          <Boxes style={{ width: '0.875rem', height: '0.875rem' }} /> {restockingId === ret.id ? 'Restocking...' : '1-Click Restock'}
                         </button>
                       ) : (
                         <span className="badge badge-success" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}>
