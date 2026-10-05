@@ -13,6 +13,16 @@ export class InventoryController {
     return this.inventoryService.getMovements(req.tenantId);
   }
 
+  @Get('variants')
+  async getVariants(@Req() req: any) {
+    return this.inventoryService.getVariants(req.tenantId);
+  }
+
+  @Get('low-stock')
+  async getLowStockAlerts(@Req() req: any) {
+    return this.inventoryService.getLowStockAlerts(req.tenantId);
+  }
+
   @Post('movements')
   async recordMovement(@Body() dto: StockMovementDto, @Req() req: any) {
     return this.inventoryService.recordMovement({

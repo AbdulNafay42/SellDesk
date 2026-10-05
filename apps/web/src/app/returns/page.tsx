@@ -15,6 +15,8 @@ import {
   ShoppingBag,
   RefreshCw,
   Tag,
+  Plus,
+  X,
 } from 'lucide-react';
 
 interface ReturnRequest {
@@ -76,6 +78,43 @@ export default function ReturnsPage() {
     }
   };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [productName, setProductName] = useState('');
+  const [sku, setSku] = useState('');
+  const [returnReason, setReturnReason] = useState('SIZE_MISMATCH');
+
+  const handleCreateReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderNumber || !customerName) return;
+
+    try {
+      const created = await api.post<ReturnRequest>('/api/returns', {
+        orderNumber,
+        customerName,
+        customerPhone,
+        productName: productName || 'Oversized Hoodie',
+        sku: sku || 'SKU-HD-BLK-XL',
+        returnReason,
+      });
+
+      if (created) {
+        setReturns((prev) => [created, ...prev]);
+      }
+    } catch (err) {
+      console.error('Failed to create return request:', err);
+    }
+
+    setIsModalOpen(false);
+    setOrderNumber('');
+    setCustomerName('');
+    setCustomerPhone('');
+    setProductName('');
+    setSku('');
+  };
+
   const filteredReturns = returns.filter(
     (r) =>
       r.returnNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -127,6 +166,11 @@ export default function ReturnsPage() {
               Process size exchanges, customer returns, COD refusal RTOs, and auto-restock items to inventory.
             </p>
           </div>
+
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+            <Plus style={{ width: '1.125rem', height: '1.125rem' }} />
+            Log Return Request
+          </button>
         </div>
 
         {/* Summary Metric Cards */}
@@ -231,6 +275,68 @@ export default function ReturnsPage() {
             )}
           </div>
         </div>
+
+        {/* Log Return Request Modal */}
+        {isModalOpen && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(0.5rem)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1.25rem' }}>
+            <div className="glass-card" style={{ width: '100%', maxWidth: '31.25rem', padding: '1.75rem', background: '#111827' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#FFF' }}>Log Return / Reverse Logistics Request</h3>
+                <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer' }}>
+                  <X style={{ width: '1.25rem', height: '1.25rem' }} />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateReturn} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Order Number</label>
+                  <input type="text" required placeholder="e.g. #ORD-8078" className="input-glass" value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Customer Name</label>
+                    <input type="text" required placeholder="e.g. Abdul Nafay" className="input-glass" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Customer Phone</label>
+                    <input type="text" placeholder="03313780919" className="input-glass" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Product Name</label>
+                    <input type="text" placeholder="e.g. Oversized Black Hoodie" className="input-glass" value={productName} onChange={(e) => setProductName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Product SKU</label>
+                    <input type="text" placeholder="HD-BLK-XL" className="input-glass" value={sku} onChange={(e) => setSku(e.target.value)} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Return Reason</label>
+                  <select className="input-glass" value={returnReason} onChange={(e) => setReturnReason(e.target.value)}>
+                    <option value="SIZE_MISMATCH">Size Mismatch / Exchange</option>
+                    <option value="COD_REFUSED">COD Delivery Refused by Customer (RTO)</option>
+                    <option value="WRONG_ITEM_SENT">Wrong Item Dispatched</option>
+                    <option value="DEFECTIVE">Defective / Damaged Goods</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary" style={{ flex: 1 }}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" style={{ flex: 1 }}>
+                    <CheckCircle2 style={{ width: '1rem', height: '1rem' }} /> Save Return Request
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

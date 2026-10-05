@@ -6,11 +6,23 @@ export class FollowupsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getLeads(businessId: string) {
+    if (!businessId) return [];
+
+    // Clean up any old sample dummy records if present
+    await this.prisma.followupLead.deleteMany({
+      where: {
+        businessId,
+        customerName: { in: ['Muhammad Hamza', 'Sana Malik'] },
+      },
+    }).catch(() => null);
+
     return await this.prisma.followupLead.findMany({
       where: { businessId },
       orderBy: { createdAt: 'desc' },
     });
   }
+
+
 
   async triggerFollowup(id: string, businessId: string) {
     const lead = await this.prisma.followupLead.findFirst({

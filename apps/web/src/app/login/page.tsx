@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +14,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const queryEmail = params.get('email');
+      if (queryEmail) {
+        setEmail(queryEmail);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +105,24 @@ export default function LoginPage() {
             WhatsApp Commerce & Multi-Tenant Seller Portal
           </p>
         </div>
+
+        {/* Team Member Pre-filled Email Tip */}
+        {email && (
+          <div
+            style={{
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '0.0625rem solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '0.625rem',
+              padding: '0.875rem 1rem',
+              color: '#34D399',
+              fontSize: '0.825rem',
+              lineHeight: '1.4',
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>👋 Team Member Sign In</div>
+            Signing in as <strong style={{ color: '#FFF' }}>{email}</strong>. Enter your account password.
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (

@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SaveWhatsAppConfigDto } from './dto/save-whatsapp-config.dto';
 import { ConversationChannel, ConversationStatus, MessageDirection, MessageType, MessageStatus } from '@prisma/client';
 import { WhatsAppPayloadParser } from './whatsapp.parser';
+import { AiService } from '../ai/ai.service';
 
 export interface SaveMessageParams {
   businessId: string;
@@ -20,7 +21,10 @@ export interface SaveMessageParams {
 export class WhatsappService {
   private readonly logger = new Logger(WhatsappService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+  ) {}
 
   /**
    * Verify GET Webhook handshake from Meta
@@ -296,7 +300,7 @@ export class WhatsappService {
     const businessId = tenantContext.businessId;
 
     // 4. Transactional Persistence: Customer -> Conversation -> Message
-    return await this.prisma.$transaction(async (tx) => {
+    const persistenceResult = await this.prisma.$transaction(async (tx) => {
       // Find or create Customer scoped by businessId + customerPhone
       let customer = await tx.customer.findFirst({
         where: {
@@ -382,7 +386,125 @@ export class WhatsappService {
         messageId: message.id,
         conversationId: conversation.id,
         customerId: customer.id,
+        customerPhone: customer.phoneNumber,
+        customerName: customer.fullName,
       };
     });
+
+    // 5. Controlled AI Processing AFTER successful Prisma transaction commit
+    if (persistenceResult && persistenceResult.status === 'PROCESSED') {
+      try {
+        const aiResult = await this.processInboundAiPipeline({
+          businessId,
+          conversationId: persistenceResult.conversationId,
+          messageId: persistenceResult.messageId,
+          externalMessageId: parsedMsg.externalMessageId,
+          customerPhone: persistenceResult.customerPhone,
+          customerName: persistenceResult.customerName,
+          type: parsedMsg.type,
+          text: parsedMsg.text,
+        });
+
+        return {
+          ...persistenceResult,
+          aiProcessed: aiResult.processed,
+          aiActionId: aiResult.actionId,
+        };
+      } catch (aiErr: any) {
+        this.logger.error(`Non-blocking AI execution exception: ${aiErr?.message || aiErr}`);
+        return persistenceResult;
+      }
+    }
+
+    return persistenceResult;
+  }
+
+  /**
+   * Controlled AI Processing Pipeline for Inbound Messages:
+   * 1. Runs AFTER PostgreSQL transaction successfully commits Customer, Conversation, and Message records.
+   * 2. Checks if message is TEXT type (skips non-text safely).
+   * 3. Idempotency check: Ensures an AiAction has not already been created for this message context.
+   * 4. Classifies intent using existing AiService.classifyMessage.
+   * 5. If order-related, runs existing AiService.extractOrder.
+   * 6. Passes result through guardrails and creates an AiAction in PENDING_APPROVAL status.
+   * 7. NEVER sends a WhatsApp reply automatically.
+   * 8. NEVER creates an Order directly in PostgreSQL.
+   */
+  async processInboundAiPipeline(params: {
+    businessId: string;
+    conversationId: string;
+    messageId: string;
+    externalMessageId?: string;
+    customerPhone: string;
+    customerName: string;
+    type: MessageType;
+    text?: string;
+  }) {
+    const { businessId, conversationId, messageId, externalMessageId, customerPhone, customerName, type, text } = params;
+
+    // 1. Skip non-text or empty text messages safely
+    if (type !== MessageType.TEXT || !text || !text.trim()) {
+      this.logger.log(`AI Processing skipped for non-text/empty inbound message ${messageId} (type: ${type})`);
+      return { processed: false, reason: 'NON_TEXT_OR_EMPTY' };
+    }
+
+    try {
+      // 2. Idempotency check: Verify no existing AiAction exists for this exact persisted messageId / wamid
+      const existingAction = await this.prisma.aiAction.findFirst({
+        where: {
+          businessId,
+          OR: [
+            { extractedData: { contains: messageId } },
+            ...(externalMessageId ? [{ extractedData: { contains: externalMessageId } }] : []),
+          ],
+        },
+      });
+
+      if (existingAction) {
+        this.logger.warn(`Idempotent AI Guard: Existing AiAction ${existingAction.id} already exists for message ${messageId}`);
+        return { processed: false, reason: 'DUPLICATE_ACTION', actionId: existingAction.id };
+      }
+
+      // 3. Classification using existing AiService
+      const classification = await this.aiService.classifyMessage({ text });
+      const intent = classification.intent;
+
+      let extractedDataObj: any = {
+        intent,
+        classificationDescription: classification.description,
+        conversationId,
+        messageId,
+        externalMessageId,
+      };
+
+      // 4. Order Extraction using existing AiService if intent is ORDER_EXTRACTION, AVAILABILITY, or PRICE_INQUIRY
+      if (intent === 'ORDER_EXTRACTION' || intent === 'AVAILABILITY' || intent === 'PRICE_INQUIRY') {
+        const extraction = await this.aiService.extractOrder({ text }, businessId);
+        extractedDataObj = {
+          ...extractedDataObj,
+          extractedOrder: extraction.extractedOrder,
+          guardrailCheck: extraction.guardrailCheck,
+          confidenceScore: extraction.confidenceScore,
+        };
+      }
+
+      // 5. Persist AiAction in PENDING_APPROVAL state using existing AiService method
+      const aiAction = await this.aiService.createPendingAction({
+        businessId,
+        type: intent,
+        customerName: customerName || customerPhone,
+        customerPhone,
+        rawText: text,
+        extractedData: extractedDataObj,
+        confidence: classification.confidence,
+      });
+
+      this.logger.log(`Persisted AI Action ${aiAction.id} (${aiAction.type}) in PENDING_APPROVAL status for business ${businessId}`);
+      return { processed: true, actionId: aiAction.id, type: aiAction.type, status: aiAction.status };
+    } catch (err: any) {
+      // Safe error logging: AI failure MUST NOT fail or roll back the persisted inbound message
+      this.logger.error(`AI Pipeline processing failed for message ${messageId}: ${err?.message || err}`);
+      return { processed: false, reason: 'AI_PROCESSING_ERROR', error: err?.message };
+    }
   }
 }

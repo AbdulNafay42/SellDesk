@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Param, Req, UseGuards } from '@nestjs/common';
-import { ReturnsService, ReturnRequest } from './returns.service';
+import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { ReturnsService, ReturnRequest, CreateReturnDto } from './returns.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../auth/guards/tenant.guard';
 
@@ -11,6 +11,14 @@ export class ReturnsController {
   @Get()
   async findAll(@Req() req: any): Promise<ReturnRequest[]> {
     return this.returnsService.findAll(req.tenantId);
+  }
+
+  @Post()
+  async create(@Body() dto: CreateReturnDto, @Req() req: any): Promise<ReturnRequest> {
+    return this.returnsService.create({
+      ...dto,
+      businessId: req.tenantId,
+    });
   }
 
   @Post(':id/restock')

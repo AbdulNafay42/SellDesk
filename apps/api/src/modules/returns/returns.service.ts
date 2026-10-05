@@ -17,6 +17,16 @@ export interface ReturnRequest {
   restocked: boolean;
 }
 
+export interface CreateReturnDto {
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  productName: string;
+  sku?: string;
+  quantity?: number;
+  returnReason: string;
+}
+
 @Injectable()
 export class ReturnsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -24,7 +34,26 @@ export class ReturnsService {
   async findAll(businessId: string) {
     return await this.prisma.returnRequest.findMany({
       where: { businessId },
-      orderBy: { requestDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async create(dto: CreateReturnDto & { businessId: string }) {
+    const returnNumber = `RET-${Math.floor(1000 + Math.random() * 9000)}`;
+    return await this.prisma.returnRequest.create({
+      data: {
+        businessId: dto.businessId,
+        returnNumber,
+        orderNumber: dto.orderNumber,
+        customerName: dto.customerName,
+        customerPhone: dto.customerPhone,
+        productName: dto.productName,
+        sku: dto.sku || 'SKU-STANDARD',
+        quantity: dto.quantity || 1,
+        returnReason: dto.returnReason || 'SIZE_MISMATCH',
+        status: 'RETURN_REQUESTED',
+        restocked: false,
+      },
     });
   }
 
@@ -38,6 +67,35 @@ export class ReturnsService {
 
     if (!ret) {
       throw new NotFoundException(`Return request #${id} not found`);
+    }
+
+    // Try to restock variant stock in Prisma if SKU exists
+    if (ret.sku) {
+      const variant = await this.prisma.productVariant.findFirst({
+        where: { businessId, sku: ret.sku },
+      });
+      if (variant) {
+        const previousStock = variant.stock;
+        const newStock = previousStock + (ret.quantity || 1);
+        await this.prisma.productVariant.update({
+          where: { id: variant.id },
+          data: { stock: newStock },
+        });
+
+        await this.prisma.stockMovement.create({
+          data: {
+            businessId,
+            sku: ret.sku,
+            productName: ret.productName,
+            variantInfo: `Return Restock (${ret.returnNumber})`,
+            type: 'RETURN_RESTOCK',
+            quantity: ret.quantity || 1,
+            previousStock,
+            newStock,
+            reference: `Return Restock #${ret.returnNumber}`,
+          },
+        }).catch(() => null);
+      }
     }
 
     return await this.prisma.returnRequest.update({

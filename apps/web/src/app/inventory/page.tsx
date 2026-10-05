@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import {
@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   X,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Movement {
   id: string;
@@ -26,63 +28,79 @@ interface Movement {
   timestamp: string;
 }
 
-import { useEffect } from 'react';
-import { api } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+interface VariantOption {
+  id: string;
+  sku: string;
+  productName: string;
+  size: string;
+  color: string;
+  stock: number;
+  label: string;
+}
+
+interface LowStockAlert {
+  sku: string;
+  productName: string;
+  variantInfo: string;
+  stock: number;
+  isAlertTriggered: boolean;
+}
 
 export default function InventoryPage() {
   const { activeBusinessId } = useAuth();
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [variants, setVariants] = useState<VariantOption[]>([]);
+  const [lowStockAlert, setLowStockAlert] = useState<LowStockAlert | null>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   // Form State
-  const [sku, setSku] = useState('HD-BLK-XL');
+  const [sku, setSku] = useState('');
   const [quantity, setQuantity] = useState(10);
   const [notes, setNotes] = useState('New shipment arrived');
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadMovements = async () => {
-      if (!activeBusinessId) return;
-      try {
-        const data = await api.get<Movement[]>('/api/inventory/movements');
-        if (isMounted) setMovements(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Failed to load inventory movements:', err);
+  const loadInventoryData = async () => {
+    if (!activeBusinessId) return;
+    try {
+      const [movRes, varRes, alertRes] = await Promise.all([
+        api.get<Movement[]>('/api/inventory/movements').catch(() => []),
+        api.get<VariantOption[]>('/api/inventory/variants').catch(() => []),
+        api.get<LowStockAlert | null>('/api/inventory/low-stock').catch(() => null),
+      ]);
+
+      setMovements(Array.isArray(movRes) ? movRes : []);
+
+      const varList = Array.isArray(varRes) ? varRes : [];
+      setVariants(varList);
+      if (varList.length > 0 && !sku) {
+        setSku(varList[0].sku);
       }
-    };
-    loadMovements();
-    return () => { isMounted = false; };
+
+      setLowStockAlert(alertRes);
+    } catch (err) {
+      console.error('Failed to load inventory data:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadInventoryData();
   }, [activeBusinessId]);
 
   const handleRestock = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!sku) return;
     try {
-      const created = await api.post<Movement>('/api/inventory/movements', {
+      await api.post<Movement>('/api/inventory/movements', {
         sku,
         quantity: Number(quantity),
         type: 'INBOUND_RESTOCK',
         notes,
       });
-      if (created) {
-        setMovements([created, ...movements]);
-      }
-    } catch {
-      const newMov: Movement = {
-        id: `mov-${Date.now()}`,
-        sku,
-        productName: 'Restocked Clothing Item',
-        variantInfo: 'Size: Standard',
-        type: 'INBOUND_RESTOCK',
-        quantity: Number(quantity),
-        previousStock: 0,
-        newStock: Number(quantity),
-        reference: notes || 'Manual Restock',
-        timestamp: 'Just now',
-      };
-      setMovements([newMov, ...movements]);
+      await loadInventoryData();
+    } catch (err) {
+      console.error('Failed to record stock movement:', err);
     }
     setIsModalOpen(false);
   };
@@ -112,25 +130,69 @@ export default function InventoryPage() {
             </p>
           </div>
 
-          <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+          <button
+            onClick={() => {
+              if (variants.length > 0 && !sku) setSku(variants[0].sku);
+              setIsModalOpen(true);
+            }}
+            className="btn-primary"
+          >
             <Plus style={{ width: '1.125rem', height: '1.125rem' }} />
             Restock Inventory
           </button>
         </div>
 
-        {/* Low Stock Warning Banner */}
-        <div style={{ background: 'rgba(244, 63, 94, 0.12)', border: '0.0625rem solid rgba(244, 63, 94, 0.3)', padding: '1rem 1.25rem', borderRadius: '0.875rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <AlertTriangle style={{ width: '1.375rem', height: '1.375rem', color: '#F43F5E' }} />
-            <div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>Low Stock Alert Triggered</div>
-              <div style={{ fontSize: '0.8rem', color: '#FDA4AF' }}>Variant <strong>Oversized Black Hoodie (XL)</strong> has only 3 units remaining!</div>
+        {/* Dynamic Low Stock Warning Banner */}
+        {lowStockAlert && (
+          <div
+            style={{
+              background: lowStockAlert.isAlertTriggered ? 'rgba(244, 63, 94, 0.12)' : 'rgba(16, 185, 129, 0.1)',
+              border: lowStockAlert.isAlertTriggered ? '0.0625rem solid rgba(244, 63, 94, 0.3)' : '0.0625rem solid rgba(16, 185, 129, 0.2)',
+              padding: '1rem 1.25rem',
+              borderRadius: '0.875rem',
+              marginBottom: '1.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <AlertTriangle style={{ width: '1.375rem', height: '1.375rem', color: lowStockAlert.isAlertTriggered ? '#F43F5E' : '#34D399' }} />
+              <div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFF' }}>
+                  {lowStockAlert.isAlertTriggered ? 'Low Stock Alert Triggered' : 'Inventory Stock Status'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: lowStockAlert.isAlertTriggered ? '#FDA4AF' : '#D1D5DB' }}>
+                  {lowStockAlert.isAlertTriggered ? (
+                    <>
+                      Variant <strong>{lowStockAlert.productName} ({lowStockAlert.sku})</strong> has only <strong>{lowStockAlert.stock} units</strong> remaining!
+                    </>
+                  ) : (
+                    <>
+                      Lowest stock item: <strong>{lowStockAlert.productName} ({lowStockAlert.sku})</strong> with <strong>{lowStockAlert.stock} units</strong> available.
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
+            <button
+              onClick={() => {
+                setSku(lowStockAlert.sku);
+                setIsModalOpen(true);
+              }}
+              className="btn-primary"
+              style={{
+                padding: '0.375rem 0.875rem',
+                fontSize: '0.8rem',
+                background: lowStockAlert.isAlertTriggered ? '#F43F5E' : '#10B981',
+              }}
+            >
+              Restock Now
+            </button>
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="btn-primary" style={{ padding: '0.375rem 0.875rem', fontSize: '0.8rem', background: '#F43F5E' }}>
-            Restock Now
-          </button>
-        </div>
+        )}
 
         {/* Search Input */}
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -177,33 +239,33 @@ export default function InventoryPage() {
                 </thead>
                 <tbody>
                   {filteredMovements.map((mov) => (
-                  <tr key={mov.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
-                    <td style={{ padding: '0.875rem 0.5rem' }}>
-                      <div style={{ fontWeight: 800, color: '#34D399' }}>{mov.sku}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#FFF' }}>{mov.productName}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{mov.variantInfo}</div>
-                    </td>
+                    <tr key={mov.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.04)', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '0.875rem 0.5rem' }}>
+                        <div style={{ fontWeight: 800, color: '#34D399' }}>{mov.sku}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#FFF' }}>{mov.productName}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{mov.variantInfo}</div>
+                      </td>
 
-                    <td style={{ padding: '0.875rem 0.5rem' }}>
-                      <span className={mov.quantity > 0 ? 'badge badge-success' : 'badge badge-rose'}>
-                        {mov.type}
-                      </span>
-                    </td>
+                      <td style={{ padding: '0.875rem 0.5rem' }}>
+                        <span className={mov.quantity > 0 ? 'badge badge-success' : 'badge badge-rose'}>
+                          {mov.type}
+                        </span>
+                      </td>
 
-                    <td style={{ padding: '0.875rem 0.5rem', fontWeight: 800, color: mov.quantity > 0 ? '#34D399' : '#F43F5E' }}>
-                      {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
-                    </td>
+                      <td style={{ padding: '0.875rem 0.5rem', fontWeight: 800, color: mov.quantity > 0 ? '#34D399' : '#F43F5E' }}>
+                        {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
+                      </td>
 
-                    <td style={{ padding: '0.875rem 0.5rem', color: '#D1D5DB' }}>
-                      {mov.previousStock} ➔ <strong style={{ color: '#FFF' }}>{mov.newStock} units</strong>
-                    </td>
+                      <td style={{ padding: '0.875rem 0.5rem', color: '#D1D5DB' }}>
+                        {mov.previousStock} ➔ <strong style={{ color: '#FFF' }}>{mov.newStock} units</strong>
+                      </td>
 
-                    <td style={{ padding: '0.875rem 0.5rem', color: '#9CA3AF' }}>{mov.reference}</td>
-                    <td style={{ padding: '0.875rem 0.5rem', color: '#6B7280', fontSize: '0.78rem' }}>{mov.timestamp}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <td style={{ padding: '0.875rem 0.5rem', color: '#9CA3AF' }}>{mov.reference}</td>
+                      <td style={{ padding: '0.875rem 0.5rem', color: '#6B7280', fontSize: '0.78rem' }}>{mov.timestamp}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
@@ -222,11 +284,28 @@ export default function InventoryPage() {
               <form onSubmit={handleRestock} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Select SKU Variant</label>
-                  <select className="input-glass" value={sku} onChange={(e) => setSku(e.target.value)}>
-                    <option value="HD-BLK-XL">HD-BLK-XL (Black Hoodie XL - 3 units left)</option>
-                    <option value="JKT-VNT-M">JKT-VNT-M (Denim Jacket M - 10 units)</option>
-                    <option value="TS-WHT-S">TS-WHT-S (White Tee S - 40 units)</option>
-                  </select>
+                  {variants.length > 0 ? (
+                    <select
+                      className="input-glass"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                    >
+                      {variants.map((v) => (
+                        <option key={v.id} value={v.sku}>
+                          {v.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. SHRT-LIN-001-M"
+                      className="input-glass"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                    />
+                  )}
                 </div>
 
                 <div>

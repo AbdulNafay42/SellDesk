@@ -30,6 +30,19 @@ test.describe('Conversations E2E Flow', () => {
 
     await prisma.business.update({ where: { id: bizId }, data: { status: 'APPROVED' } });
 
+    await prisma.whatsAppConfig.create({
+      data: {
+        businessId: bizId,
+        phoneNumberId: `E2E_PHONE_${ts}`,
+        wabaId: `E2E_WABA_${ts}`,
+        accessToken: `E2E_TOKEN_${ts}`,
+        verifyToken: 'selldesk_verify_token_2026',
+        displayPhoneNumber: '+92 300 3334455',
+        verifiedName: 'E2E Biz Store',
+        isActive: true,
+      },
+    });
+
     const cust = await prisma.customer.create({
       data: { businessId: bizId, fullName: 'Farhan Ali', phoneNumber: '03003334455', city: 'Lahore' },
     });

@@ -13,7 +13,10 @@ import {
   X,
   MapPin,
   Phone,
+  Cog,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Order {
   id: string;
@@ -32,79 +35,38 @@ interface Order {
   createdAt: string;
 }
 
-const initialOrders: Order[] = [
-  {
-    id: 'ord-1042',
-    orderNumber: '#ORD-1042',
-    customerName: 'Ahmed Khan',
-    customerPhone: '0300-4829102',
-    city: 'Lahore',
-    address: 'House #42, Block C, Model Town',
-    productName: 'Oversized Black Premium Hoodie',
-    variantInfo: 'Size: XL • Color: Black',
-    quantity: 1,
-    totalAmount: 4749,
-    paymentMethod: 'COD',
-    paymentStatus: 'PENDING',
-    status: 'NEW',
-    createdAt: '10 mins ago',
-  },
-  {
-    id: 'ord-1041',
-    orderNumber: '#ORD-1041',
-    customerName: 'Fatima Zohra',
-    customerPhone: '0321-9920144',
-    city: 'Karachi',
-    address: 'Flat 402, Sunset Boulevard, DHA Phase 5',
-    productName: 'Vintage Wash Denim Jacket',
-    variantInfo: 'Size: M • Color: Blue Wash',
-    quantity: 1,
-    totalAmount: 6200,
-    paymentMethod: 'COD',
-    paymentStatus: 'PENDING',
-    status: 'CONFIRMED',
-    createdAt: '2 hours ago',
-  },
-  {
-    id: 'ord-1040',
-    orderNumber: '#ORD-1040',
-    customerName: 'Usman Ali',
-    customerPhone: '0333-1029384',
-    city: 'Islamabad',
-    address: 'Street 14, Sector F-8/3',
-    productName: 'Minimalist Essential White Tee',
-    variantInfo: 'Size: L • Color: White',
-    quantity: 2,
-    totalAmount: 4198,
-    paymentMethod: 'Bank Transfer',
-    paymentStatus: 'PAID',
-    status: 'PACKED',
-    createdAt: 'Yesterday',
-  },
-  {
-    id: 'ord-1039',
-    orderNumber: '#ORD-1039',
-    customerName: 'Zainab Bibi',
-    customerPhone: '0345-5544332',
-    city: 'Faisalabad',
-    address: 'Civil Lines Road',
-    productName: 'Oversized Black Premium Hoodie',
-    variantInfo: 'Size: M • Color: Black',
-    quantity: 1,
-    totalAmount: 4749,
-    paymentMethod: 'COD',
-    paymentStatus: 'PENDING',
-    status: 'SHIPPED',
-    createdAt: '2 days ago',
-  },
-];
+const normalizeOrder = (o: any): Order => {
+  let details: any = {};
+  if (o.notes) {
+    try {
+      details = JSON.parse(o.notes);
+    } catch {
+      details = {};
+    }
+  }
 
-import { api } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber || '#ORD-0000',
+    customerName: o.customerName || o.customer?.fullName || 'Walk-in Customer',
+    customerPhone: o.customerPhone || o.customer?.phoneNumber || 'N/A',
+    city: o.city || o.customer?.city || 'Lahore',
+    address: o.address || o.customer?.address || 'N/A',
+    productName: o.productName || details.productName || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : 'Oversized Black Premium Hoodie'),
+    variantInfo: o.variantInfo || details.variantInfo || 'Size: XL • Color: Black',
+    quantity: o.quantity || details.quantity || 1,
+    totalAmount: o.totalAmount || 0,
+    paymentMethod: o.paymentMethod || 'COD',
+    paymentStatus: o.paymentStatus || 'PENDING',
+    status: o.status || 'NEW',
+    createdAt: o.createdAt ? (o.createdAt.includes('Z') || o.createdAt.includes('T') ? new Date(o.createdAt).toLocaleString() : o.createdAt) : 'Just now',
+  };
+};
 
 export default function OrdersPage() {
   const { activeBusinessId } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [storeProducts, setStoreProducts] = useState<Array<{ id: string; name: string; basePrice: number }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');
@@ -116,7 +78,8 @@ export default function OrdersPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [city, setCity] = useState('Lahore');
   const [address, setAddress] = useState('');
-  const [productName, setProductName] = useState('Oversized Black Premium Hoodie');
+  const [productName, setProductName] = useState('');
+  const [customProductName, setCustomProductName] = useState('');
   const [variantInfo, setVariantInfo] = useState('Size: XL • Color: Black');
   const [totalAmount, setTotalAmount] = useState(4499);
   const [paymentMethod, setPaymentMethod] = useState('COD');
@@ -126,38 +89,78 @@ export default function OrdersPage() {
     const loadOrders = async () => {
       if (!activeBusinessId) return;
       try {
-        const data = await api.get<Order[]>('/api/orders');
-        if (isMounted) setOrders(Array.isArray(data) ? data : []);
+        const data = await api.get<any[]>('/api/orders');
+        if (isMounted && Array.isArray(data)) {
+          setOrders(data.map(normalizeOrder));
+        }
       } catch (err) {
         console.error('Failed to load orders:', err);
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
+
+    const loadProducts = async () => {
+      if (!activeBusinessId) return;
+      try {
+        const prods = await api.get<any[]>('/api/products');
+        if (isMounted && Array.isArray(prods)) {
+          setStoreProducts(prods);
+          if (prods.length > 0) {
+            setProductName(prods[0].name);
+            setTotalAmount(prods[0].basePrice || 4499);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load store products:', err);
+      }
+    };
+
     loadOrders();
-    return () => { isMounted = false; };
+    loadProducts();
+    const interval = setInterval(loadOrders, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [activeBusinessId]);
 
   const handleStatusChange = async (id: string, nextStatus: string) => {
-    try {
-      await api.patch(`/api/orders/${id}/status`, { status: nextStatus }).catch(() => null);
-    } catch { }
     setOrders((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: nextStatus } : o))
     );
+
+    try {
+      const updated = await api.patch(`/api/orders/${id}/status`, { status: nextStatus }).catch(() => null);
+      if (updated) {
+        const normalized = normalizeOrder(updated);
+        setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...normalized } : o)));
+      }
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('selldesk-counts-update'));
+    }
   };
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone) return;
 
+    const finalProductName = (productName === 'CUSTOM_ITEM' || !productName)
+      ? (customProductName || 'Custom Product Item')
+      : productName;
+
     try {
-      const created = await api.post<Order>('/api/orders', {
+      const created = await api.post<any>('/api/orders', {
         customerName,
         customerPhone,
         city,
         address,
-        productName,
+        productName: finalProductName,
         variantInfo,
         quantity: 1,
         totalAmount,
@@ -165,7 +168,8 @@ export default function OrdersPage() {
       });
 
       if (created) {
-        setOrders([created, ...orders]);
+        const normalized = normalizeOrder(created);
+        setOrders((prev) => [normalized, ...prev]);
       }
     } catch {
       const newOrd: Order = {
@@ -175,7 +179,7 @@ export default function OrdersPage() {
         customerPhone,
         city,
         address,
-        productName,
+        productName: finalProductName,
         variantInfo,
         quantity: 1,
         totalAmount: totalAmount + 250,
@@ -184,12 +188,18 @@ export default function OrdersPage() {
         status: 'NEW',
         createdAt: 'Just now',
       };
-      setOrders([newOrd, ...orders]);
+      setOrders((prev) => [newOrd, ...prev]);
     }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('selldesk-counts-update'));
+    }
+
     setIsModalOpen(false);
     setCustomerName('');
     setCustomerPhone('');
     setAddress('');
+    setCustomProductName('');
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -335,27 +345,54 @@ export default function OrdersPage() {
                       </td>
 
                       <td style={{ padding: '1rem 0.625rem', verticalAlign: 'top' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                          {ord.status === 'NEW' && (
-                            <button onClick={() => handleStatusChange(ord.id, 'CONFIRMED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-                              <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Confirm
-                            </button>
-                          )}
-                          {ord.status === 'CONFIRMED' && (
-                            <button onClick={() => handleStatusChange(ord.id, 'PACKED')} className="btn-secondary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', color: '#FBBF24' }}>
-                              <PackageCheck style={{ width: '0.75rem', height: '0.75rem' }} /> Pack Order
-                            </button>
-                          )}
-                          {ord.status === 'PACKED' && (
-                            <button onClick={() => handleStatusChange(ord.id, 'SHIPPED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-                              <Truck style={{ width: '0.75rem', height: '0.75rem' }} /> Ship Courier
-                            </button>
-                          )}
-                          {ord.status === 'SHIPPED' && (
-                            <button onClick={() => handleStatusChange(ord.id, 'DELIVERED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-                              <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Mark Delivered
-                            </button>
-                          )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          <select
+                            value={ord.status}
+                            onChange={(e) => handleStatusChange(ord.id, e.target.value)}
+                            className="input-glass"
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', borderRadius: '0.375rem' }}
+                          >
+                            <option value="NEW">NEW</option>
+                            <option value="CONFIRMED">CONFIRMED</option>
+                            <option value="PROCESSING">PROCESSING</option>
+                            <option value="PACKED">PACKED</option>
+                            <option value="SHIPPED">SHIPPED</option>
+                            <option value="DELIVERED">DELIVERED</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                          </select>
+
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                            {ord.status === 'NEW' && (
+                              <button onClick={() => handleStatusChange(ord.id, 'CONFIRMED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                                <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Confirm
+                              </button>
+                            )}
+                            {ord.status === 'CONFIRMED' && (
+                              <>
+                                <button onClick={() => handleStatusChange(ord.id, 'PROCESSING')} className="btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#60A5FA' }}>
+                                  <Cog style={{ width: '0.75rem', height: '0.75rem' }} /> Process
+                                </button>
+                                <button onClick={() => handleStatusChange(ord.id, 'PACKED')} className="btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#FBBF24' }}>
+                                  <PackageCheck style={{ width: '0.75rem', height: '0.75rem' }} /> Pack
+                                </button>
+                              </>
+                            )}
+                            {ord.status === 'PROCESSING' && (
+                              <button onClick={() => handleStatusChange(ord.id, 'PACKED')} className="btn-secondary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', color: '#FBBF24' }}>
+                                <PackageCheck style={{ width: '0.75rem', height: '0.75rem' }} /> Pack Order
+                              </button>
+                            )}
+                            {ord.status === 'PACKED' && (
+                              <button onClick={() => handleStatusChange(ord.id, 'SHIPPED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                                <Truck style={{ width: '0.75rem', height: '0.75rem' }} /> Ship Courier
+                              </button>
+                            )}
+                            {ord.status === 'SHIPPED' && (
+                              <button onClick={() => handleStatusChange(ord.id, 'DELIVERED')} className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                                <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Mark Delivered
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -412,12 +449,51 @@ export default function OrdersPage() {
 
                 <div>
                   <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Product Item</label>
-                  <select className="input-glass" value={productName} onChange={(e) => setProductName(e.target.value)}>
-                    <option value="Oversized Black Premium Hoodie">Oversized Black Premium Hoodie (Rs 4,499)</option>
-                    <option value="Vintage Wash Denim Jacket">Vintage Wash Denim Jacket (Rs 6,200)</option>
-                    <option value="Minimalist Essential White Tee">Minimalist Essential White Tee (Rs 1,999)</option>
-                  </select>
+                  {storeProducts.length > 0 ? (
+                    <select
+                      className="input-glass"
+                      value={productName}
+                      onChange={(e) => {
+                        const selectedName = e.target.value;
+                        setProductName(selectedName);
+                        const prod = storeProducts.find((p) => p.name === selectedName);
+                        if (prod) {
+                          setTotalAmount(prod.basePrice || 0);
+                        }
+                      }}
+                    >
+                      {storeProducts.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.name} (Rs {p.basePrice?.toLocaleString() || 0})
+                        </option>
+                      ))}
+                      <option value="CUSTOM_ITEM">-- Enter Custom Item --</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Oversized Hoodie, Lawn Suit..."
+                      className="input-glass"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                    />
+                  )}
                 </div>
+
+                {(storeProducts.length === 0 || productName === 'CUSTOM_ITEM') && (
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Custom Product Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter Product Item Name..."
+                      className="input-glass"
+                      value={customProductName}
+                      onChange={(e) => setCustomProductName(e.target.value)}
+                    />
+                  </div>
+                )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: '0.75rem' }}>
                   <div>
@@ -433,6 +509,17 @@ export default function OrdersPage() {
                       <option value="EasyPaisa">EasyPaisa</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Subtotal Amount (PKR)</label>
+                  <input
+                    type="number"
+                    required
+                    className="input-glass"
+                    value={totalAmount}
+                    onChange={(e) => setTotalAmount(Number(e.target.value))}
+                  />
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
@@ -451,3 +538,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+

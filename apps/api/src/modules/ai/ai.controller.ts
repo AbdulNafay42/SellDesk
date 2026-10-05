@@ -14,9 +14,10 @@ export class AiController {
   }
 
   @Post('extract-order')
-  async extractOrder(@Body() dto: ExtractOrderDto) {
-    return this.aiService.extractOrder(dto);
+  async extractOrder(@Body() dto: ExtractOrderDto, @Req() req: any) {
+    return this.aiService.extractOrder(dto, req.tenantId);
   }
+
 
   @Post('generate-reply')
   async generateReply(@Body() dto: GenerateReplyDto, @Req() req: any) {

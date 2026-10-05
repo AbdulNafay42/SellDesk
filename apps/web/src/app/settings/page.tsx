@@ -18,6 +18,8 @@ import {
   Download,
   Save,
   X,
+  Copy,
+  Link2,
 } from 'lucide-react';
 
 interface TeamMember {
@@ -27,6 +29,7 @@ interface TeamMember {
   role: 'OWNER' | 'ADMIN' | 'STAFF' | 'SALES_AGENT' | 'INVENTORY_MANAGER';
   status: 'ACTIVE' | 'INVITED';
   joinedDate: string;
+  inviteToken?: string;
 }
 
 interface SubscriptionBilling {
@@ -143,6 +146,20 @@ export default function SettingsPage() {
       default:
         return <span className="badge">{role}</span>;
     }
+  };
+
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
+  const handleCopyAccessLink = (mem: TeamMember) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const accessUrl = mem.inviteToken
+      ? `${origin}/invite/${mem.inviteToken}`
+      : `${origin}/login?email=${encodeURIComponent(mem.email)}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(accessUrl);
+    }
+    setCopiedEmail(mem.name);
+    setTimeout(() => setCopiedEmail(null), 4000);
   };
 
   return (
@@ -309,6 +326,12 @@ export default function SettingsPage() {
               </button>
             </div>
 
+            {copiedEmail && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '0.0625rem solid rgba(16, 185, 129, 0.3)', padding: '0.75rem 1rem', borderRadius: '0.625rem', marginBottom: '1rem', color: '#34D399', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CheckCircle2 style={{ width: '1rem', height: '1rem' }} /> Invitation Access Link Copied for {copiedEmail}! Share it via WhatsApp or Email so they can set their password.
+              </div>
+            )}
+
             <div className="glass-card" style={{ padding: '1.5rem' }}>
               <div className="table-responsive-container">
                 {team.length === 0 ? (
@@ -325,6 +348,7 @@ export default function SettingsPage() {
                         <th style={{ padding: '0.75rem 1rem' }}>Assigned RBAC Role</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Status</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Joined Date</th>
+                        <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -343,6 +367,22 @@ export default function SettingsPage() {
                             )}
                           </td>
                           <td style={{ padding: '1rem', color: '#9CA3AF', fontSize: '0.8rem' }}>{mem.joinedDate}</td>
+                          <td style={{ padding: '1rem', textAlign: 'right' }}>
+                            {mem.role === 'OWNER' ? (
+                              <span style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic' }}>
+                                Account Creator (Owner)
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleCopyAccessLink(mem)}
+                                className="btn-secondary"
+                                style={{ padding: '0.35rem 0.625rem', fontSize: '0.75rem', gap: '0.25rem' }}
+                                title="Copy Tokenized Invite Link for password setup"
+                              >
+                                <Link2 style={{ width: '0.75rem', height: '0.75rem' }} /> Copy Access Link
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

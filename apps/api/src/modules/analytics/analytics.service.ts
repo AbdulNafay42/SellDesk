@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface AnalyticsMetrics {
   grossRevenuePKR: number;
@@ -14,9 +15,36 @@ export interface AnalyticsMetrics {
   topSellingProducts: Array<{ name: string; sku: string; unitsSold: number; revenuePKR: number }>;
 }
 
+export interface SidebarCounts {
+  orders: number;
+  followups: number;
+  payments: number;
+}
+
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async getCounts(businessId: string): Promise<SidebarCounts> {
+    if (!businessId) {
+      return { orders: 0, followups: 0, payments: 0 };
+    }
+
+    const [orders, followups, payments] = await Promise.all([
+      this.prisma.order.count({ where: { businessId } }),
+      this.prisma.followupLead.count({ where: { businessId } }),
+      this.prisma.paymentRecord.count({ where: { businessId } }),
+    ]);
+
+    return {
+      orders,
+      followups,
+      payments,
+    };
+  }
 
   async getMetrics(businessId: string): Promise<AnalyticsMetrics> {
     const orders = await this.ordersService.findAll(businessId);
@@ -39,3 +67,4 @@ export class AnalyticsService {
     };
   }
 }
+

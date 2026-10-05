@@ -19,6 +19,7 @@ export interface TeamMember {
   role: 'OWNER' | 'ADMIN' | 'STAFF' | 'SALES_AGENT' | 'INVENTORY_MANAGER';
   status: 'ACTIVE' | 'INVITED';
   joinedDate: string;
+  inviteToken?: string;
 }
 
 export interface SubscriptionBilling {
@@ -96,14 +97,34 @@ export class SettingsService {
       orderBy: { createdAt: 'asc' },
     });
 
-    return members.map((m) => ({
-      id: m.id,
-      name: m.user.fullName,
-      email: m.user.email,
-      role: m.role as any,
-      status: 'ACTIVE',
-      joinedDate: m.createdAt.toISOString().split('T')[0],
-    }));
+    const invitations = await this.prisma.invitationToken.findMany({
+      where: {
+        businessId,
+        usedAt: null,
+        expiresAt: { gte: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const invMap = new Map<string, string>();
+    for (const inv of invitations) {
+      if (!invMap.has(inv.email.toLowerCase())) {
+        invMap.set(inv.email.toLowerCase(), inv.token);
+      }
+    }
+
+    return members.map((m) => {
+      const inviteToken = invMap.get(m.user.email.toLowerCase());
+      return {
+        id: m.id,
+        name: m.user.fullName,
+        email: m.user.email,
+        role: m.role as any,
+        status: m.role === 'OWNER' ? 'ACTIVE' : inviteToken ? 'INVITED' : 'ACTIVE',
+        joinedDate: m.createdAt.toISOString().split('T')[0],
+        inviteToken,
+      };
+    });
   }
 
   async inviteTeamMember(
@@ -111,6 +132,7 @@ export class SettingsService {
     businessId: string,
   ): Promise<TeamMember> {
     const bcrypt = require('bcryptjs');
+    const crypto = require('crypto');
     const normalizedEmail = dto.email.toLowerCase().trim();
 
     let user = await this.prisma.user.findUnique({
@@ -118,20 +140,19 @@ export class SettingsService {
     });
 
     if (!user) {
-      const crypto = require('crypto');
-      const randomPassword = crypto.randomBytes(24).toString('hex');
-      const defaultPasswordHash = bcrypt.hashSync(randomPassword, 10);
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const tempHash = bcrypt.hashSync(randomPassword, 10);
       user = await this.prisma.user.create({
         data: {
           email: normalizedEmail,
-          passwordHash: defaultPasswordHash,
+          passwordHash: tempHash,
           fullName: dto.name,
           platformRole: 'USER',
         },
       });
     }
 
-    const mappedRole = (dto.role === 'ADMIN' || dto.role === 'OWNER') ? dto.role : 'STAFF';
+    const mappedRole: 'OWNER' | 'ADMIN' | 'STAFF' = (dto.role === 'ADMIN' || dto.role === 'OWNER') ? dto.role : 'STAFF';
 
     const existingMember = await this.prisma.businessMember.findUnique({
       where: {
@@ -153,6 +174,21 @@ export class SettingsService {
       });
     }
 
+    // Create unique secure invitation token for setting their own password
+    const token = crypto.randomBytes(24).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await this.prisma.invitationToken.create({
+      data: {
+        token,
+        email: normalizedEmail,
+        userId: user.id,
+        businessId,
+        role: mappedRole,
+        expiresAt,
+      },
+    });
+
     return {
       id: memberRecord.id,
       name: user.fullName,
@@ -160,6 +196,7 @@ export class SettingsService {
       role: dto.role,
       status: 'INVITED',
       joinedDate: memberRecord.createdAt.toISOString().split('T')[0],
+      inviteToken: token,
     };
   }
 
