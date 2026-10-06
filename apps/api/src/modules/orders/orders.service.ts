@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreateOrderDto {
@@ -8,18 +8,18 @@ export interface CreateOrderDto {
   city: string;
   address: string;
   productName: string;
-  variantInfo: string;
-  quantity: number;
-  totalAmount: number;
-  paymentMethod: string;
+  variantInfo?: string;
+  quantity?: number;
+  totalAmount?: number;
+  paymentMethod?: string;
   notes?: string;
+  productId?: string;
+  variantId?: string;
 }
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
-
-
 
   async findAll(businessId: string, status?: string) {
     const orders = await this.prisma.order.findMany({
@@ -47,8 +47,8 @@ export class OrdersService {
         customerPhone: o.customer?.phoneNumber || 'N/A',
         city: o.customer?.city || 'Lahore',
         address: o.customer?.address || '',
-        productName: details.productName || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : 'Oversized Black Premium Hoodie'),
-        variantInfo: details.variantInfo || 'Size: XL • Color: Black',
+        productName: details.productName || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : 'Order Item'),
+        variantInfo: details.variantInfo || 'Standard',
         quantity: details.quantity || 1,
       };
     });
@@ -104,6 +104,29 @@ export class OrdersService {
   }
 
   async create(dto: CreateOrderDto) {
+    // Validate productId tenant ownership if provided
+    let verifiedProduct: any = null;
+    if (dto.productId) {
+      verifiedProduct = await this.prisma.product.findFirst({
+        where: { id: dto.productId },
+      });
+      if (!verifiedProduct || verifiedProduct.businessId !== dto.businessId) {
+        throw new BadRequestException(`Product ${dto.productId} does not belong to business ${dto.businessId}`);
+      }
+    }
+
+    // Validate variantId tenant ownership if provided
+    let verifiedVariant: any = null;
+    if (dto.variantId) {
+      verifiedVariant = await this.prisma.productVariant.findFirst({
+        where: { id: dto.variantId },
+        include: { product: true },
+      });
+      if (!verifiedVariant || verifiedVariant.businessId !== dto.businessId || verifiedVariant.product?.businessId !== dto.businessId) {
+        throw new BadRequestException(`Variant ${dto.variantId} does not belong to business ${dto.businessId}`);
+      }
+    }
+
     let customer = await this.prisma.customer.findFirst({
       where: { businessId: dto.businessId, phoneNumber: dto.customerPhone || '03000000000' },
     });
@@ -120,15 +143,20 @@ export class OrdersService {
     }
 
     const shippingFee = 250;
-    const subtotal = dto.totalAmount || 0;
+    const subtotal = dto.totalAmount || (verifiedVariant ? verifiedVariant.price : (verifiedProduct ? verifiedProduct.basePrice : 0));
     const totalAmount = subtotal + shippingFee;
     const orderNumber = `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const finalProductName = dto.productName || (verifiedProduct ? verifiedProduct.name : 'Catalog Item');
+    const finalVariantInfo = dto.variantInfo || (verifiedVariant ? `Size: ${verifiedVariant.size || 'STD'} • Color: ${verifiedVariant.color || 'STD'}` : 'Standard');
+
     const notesPayload = JSON.stringify({
-      productName: dto.productName || 'Oversized Black Premium Hoodie',
-      variantInfo: dto.variantInfo || 'Size: XL • Color: Black',
+      productName: finalProductName,
+      variantInfo: finalVariantInfo,
       quantity: dto.quantity || 1,
       userNotes: dto.notes || '',
+      productId: verifiedProduct?.id || null,
+      variantId: verifiedVariant?.id || null,
     });
 
     const createdOrder = await this.prisma.order.create({
@@ -167,12 +195,9 @@ export class OrdersService {
       customerPhone: customer.phoneNumber,
       city: customer.city,
       address: customer.address,
-      productName: dto.productName || 'Oversized Black Premium Hoodie',
-      variantInfo: dto.variantInfo || 'Size: XL • Color: Black',
+      productName: finalProductName,
+      variantInfo: finalVariantInfo,
       quantity: dto.quantity || 1,
     };
   }
 }
-
-
-

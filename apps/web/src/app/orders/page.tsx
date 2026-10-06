@@ -14,6 +14,7 @@ import {
   MapPin,
   Phone,
   Cog,
+  Package,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -35,6 +36,23 @@ interface Order {
   createdAt: string;
 }
 
+interface ProductVariantItem {
+  id?: string;
+  size?: string;
+  color?: string;
+  sku?: string;
+  price?: number;
+  stock?: number;
+}
+
+interface StoreProductItem {
+  id: string;
+  name: string;
+  basePrice: number;
+  sku?: string;
+  variants?: ProductVariantItem[];
+}
+
 const normalizeOrder = (o: any): Order => {
   let details: any = {};
   if (o.notes) {
@@ -52,8 +70,8 @@ const normalizeOrder = (o: any): Order => {
     customerPhone: o.customerPhone || o.customer?.phoneNumber || 'N/A',
     city: o.city || o.customer?.city || 'Lahore',
     address: o.address || o.customer?.address || 'N/A',
-    productName: o.productName || details.productName || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : 'Oversized Black Premium Hoodie'),
-    variantInfo: o.variantInfo || details.variantInfo || 'Size: XL • Color: Black',
+    productName: o.productName || details.productName || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : 'Catalog Item'),
+    variantInfo: o.variantInfo || details.variantInfo || 'Standard',
     quantity: o.quantity || details.quantity || 1,
     totalAmount: o.totalAmount || 0,
     paymentMethod: o.paymentMethod || 'COD',
@@ -66,22 +84,24 @@ const normalizeOrder = (o: any): Order => {
 export default function OrdersPage() {
   const { activeBusinessId } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [storeProducts, setStoreProducts] = useState<Array<{ id: string; name: string; basePrice: number }>>([]);
+  const [storeProducts, setStoreProducts] = useState<StoreProductItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // New Order Form
+  // New Order Form State
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [city, setCity] = useState('Lahore');
   const [address, setAddress] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState('');
   const [productName, setProductName] = useState('');
   const [customProductName, setCustomProductName] = useState('');
-  const [variantInfo, setVariantInfo] = useState('Size: XL • Color: Black');
-  const [totalAmount, setTotalAmount] = useState(4499);
+  const [variantInfo, setVariantInfo] = useState('Standard');
+  const [totalAmount, setTotalAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('COD');
 
   useEffect(() => {
@@ -103,16 +123,40 @@ export default function OrdersPage() {
     const loadProducts = async () => {
       if (!activeBusinessId) return;
       try {
-        const prods = await api.get<any[]>('/api/products');
+        const prods = await api.get<StoreProductItem[]>('/api/products');
         if (isMounted && Array.isArray(prods)) {
           setStoreProducts(prods);
           if (prods.length > 0) {
-            setProductName(prods[0].name);
-            setTotalAmount(prods[0].basePrice || 4499);
+            const first = prods[0];
+            setSelectedProductId(first.id);
+            setProductName(first.name);
+            if (first.variants && first.variants.length > 0) {
+              const v = first.variants[0];
+              setSelectedVariantId(v.id || '');
+              setVariantInfo(`Size: ${v.size || 'STD'} • Color: ${v.color || 'STD'}`);
+              setTotalAmount(v.price || first.basePrice || 0);
+            } else {
+              setSelectedVariantId('');
+              setVariantInfo('Standard');
+              setTotalAmount(first.basePrice || 0);
+            }
+          } else {
+            setSelectedProductId('');
+            setSelectedVariantId('');
+            setProductName('');
+            setVariantInfo('Standard');
+            setTotalAmount(0);
           }
         }
       } catch (err) {
         console.error('Failed to load store products:', err);
+        if (isMounted) {
+          setStoreProducts([]);
+          setSelectedProductId('');
+          setSelectedVariantId('');
+          setProductName('');
+          setTotalAmount(0);
+        }
       }
     };
 
@@ -125,6 +169,44 @@ export default function OrdersPage() {
       clearInterval(interval);
     };
   }, [activeBusinessId]);
+
+  const handleProductSelection = (productId: string) => {
+    setSelectedProductId(productId);
+    if (productId === 'CUSTOM_ITEM') {
+      setProductName('CUSTOM_ITEM');
+      setSelectedVariantId('');
+      setVariantInfo('Standard');
+      setTotalAmount(0);
+      return;
+    }
+
+    const prod = storeProducts.find((p) => p.id === productId);
+    if (prod) {
+      setProductName(prod.name);
+      if (prod.variants && prod.variants.length > 0) {
+        const firstVar = prod.variants[0];
+        setSelectedVariantId(firstVar.id || '');
+        setVariantInfo(`Size: ${firstVar.size || 'STD'} • Color: ${firstVar.color || 'STD'}`);
+        setTotalAmount(firstVar.price || prod.basePrice || 0);
+      } else {
+        setSelectedVariantId('');
+        setVariantInfo('Standard');
+        setTotalAmount(prod.basePrice || 0);
+      }
+    }
+  };
+
+  const handleVariantSelection = (variantId: string) => {
+    setSelectedVariantId(variantId);
+    const prod = storeProducts.find((p) => p.id === selectedProductId);
+    if (prod && prod.variants) {
+      const v = prod.variants.find((vItem) => vItem.id === variantId);
+      if (v) {
+        setVariantInfo(`Size: ${v.size || 'STD'} • Color: ${v.color || 'STD'}`);
+        setTotalAmount(v.price || prod.basePrice || 0);
+      }
+    }
+  };
 
   const handleStatusChange = async (id: string, nextStatus: string) => {
     setOrders((prev) =>
@@ -151,7 +233,7 @@ export default function OrdersPage() {
     if (!customerName || !customerPhone) return;
 
     const finalProductName = (productName === 'CUSTOM_ITEM' || !productName)
-      ? (customProductName || 'Custom Product Item')
+      ? (customProductName || 'Custom Catalog Item')
       : productName;
 
     try {
@@ -165,6 +247,8 @@ export default function OrdersPage() {
         quantity: 1,
         totalAmount,
         paymentMethod,
+        productId: selectedProductId && selectedProductId !== 'CUSTOM_ITEM' ? selectedProductId : undefined,
+        variantId: selectedVariantId || undefined,
       });
 
       if (created) {
@@ -210,6 +294,8 @@ export default function OrdersPage() {
       o.customerPhone.includes(search);
     return matchesTab && matchesSearch;
   });
+
+  const selectedProductObj = storeProducts.find((p) => p.id === selectedProductId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -452,36 +538,43 @@ export default function OrdersPage() {
                   {storeProducts.length > 0 ? (
                     <select
                       className="input-glass"
-                      value={productName}
-                      onChange={(e) => {
-                        const selectedName = e.target.value;
-                        setProductName(selectedName);
-                        const prod = storeProducts.find((p) => p.name === selectedName);
-                        if (prod) {
-                          setTotalAmount(prod.basePrice || 0);
-                        }
-                      }}
+                      value={selectedProductId}
+                      onChange={(e) => handleProductSelection(e.target.value)}
                     >
                       {storeProducts.map((p) => (
-                        <option key={p.id} value={p.name}>
-                          {p.name} (Rs {p.basePrice?.toLocaleString() || 0})
+                        <option key={p.id} value={p.id}>
+                          {p.name} (Base: Rs {p.basePrice?.toLocaleString() || 0})
                         </option>
                       ))}
                       <option value="CUSTOM_ITEM">-- Enter Custom Item --</option>
                     </select>
                   ) : (
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Oversized Hoodie, Lawn Suit..."
-                      className="input-glass"
-                      value={productName}
-                      onChange={(e) => setProductName(e.target.value)}
-                    />
+                    <div style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.08)', borderRadius: '0.5rem', border: '0.0625rem solid rgba(239, 68, 68, 0.2)', fontSize: '0.8rem', color: '#F87171', marginBottom: '0.5rem' }}>
+                      <Package style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.375rem' }} />
+                      No products found in catalog. Add products to your catalog first or enter a custom item below.
+                    </div>
                   )}
                 </div>
 
-                {(storeProducts.length === 0 || productName === 'CUSTOM_ITEM') && (
+                {/* Product Variant Selector */}
+                {selectedProductObj && selectedProductObj.variants && selectedProductObj.variants.length > 0 && (
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Select Variant (Size / Color)</label>
+                    <select
+                      className="input-glass"
+                      value={selectedVariantId}
+                      onChange={(e) => handleVariantSelection(e.target.value)}
+                    >
+                      {selectedProductObj.variants.map((v) => (
+                        <option key={v.id || v.sku} value={v.id}>
+                          Size: {v.size || 'STD'} • Color: {v.color || 'STD'} — Rs {(v.price || selectedProductObj.basePrice || 0).toLocaleString()} ({v.stock ?? 0} in stock)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {(storeProducts.length === 0 || selectedProductId === 'CUSTOM_ITEM') && (
                   <div>
                     <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Custom Product Name</label>
                     <input
@@ -497,7 +590,7 @@ export default function OrdersPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: '0.75rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Variant (Size / Color)</label>
+                    <label style={{ fontSize: '0.8rem', color: '#D1D5DB', display: 'block', marginBottom: '0.25rem' }}>Variant Details</label>
                     <input type="text" className="input-glass" value={variantInfo} onChange={(e) => setVariantInfo(e.target.value)} />
                   </div>
                   <div>
@@ -538,5 +631,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-

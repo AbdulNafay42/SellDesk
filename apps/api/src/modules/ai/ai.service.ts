@@ -118,25 +118,35 @@ export class AiService {
 
     // 6. Dynamic Product matching against store catalog
     let matchedProduct = null;
+    let matchedVariant = null;
     if (products && products.length > 0) {
       matchedProduct = products.find((p) =>
-        lowerText.split(' ').some((word) => word.length > 3 && p.name.toLowerCase().includes(word))
+        lowerText.split(' ').some((word) => word.length > 2 && p.name.toLowerCase().includes(word))
       ) || products[0];
+
+      if (matchedProduct && Array.isArray(matchedProduct.variants) && matchedProduct.variants.length > 0) {
+        matchedVariant = matchedProduct.variants.find((v: any) =>
+          (v.size && v.size.toLowerCase() === size.toLowerCase()) ||
+          (v.color && v.color.toLowerCase() === color.toLowerCase())
+        ) || matchedProduct.variants[0];
+      }
     }
 
     const productName = matchedProduct
       ? matchedProduct.name
-      : (color !== 'Default' ? `${color} ${size} Apparel Item` : 'WhatsApp Catalog Item');
-    const itemPrice = matchedProduct ? (matchedProduct.basePrice || 3500) : 3500;
+      : (color !== 'Default' ? `${color} ${size} Apparel Item` : 'Catalog Item');
+    const itemPrice = matchedVariant?.price ?? matchedProduct?.basePrice ?? 3500;
     const shippingFee = 250;
     const totalAmount = itemPrice * quantity + shippingFee;
 
     return {
       success: true,
       extractedOrder: {
+        productId: matchedProduct?.id || null,
+        variantId: matchedVariant?.id || null,
         productName,
-        size,
-        color,
+        size: matchedVariant?.size || size,
+        color: matchedVariant?.color || color,
         quantity,
         city,
         paymentMethod,
