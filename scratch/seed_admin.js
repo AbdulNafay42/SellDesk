@@ -30,13 +30,7 @@ async function seedAdmin() {
     });
   }
 
-  const member = await prisma.businessMember.upsert({
-    where: { userId_businessId: { userId: user.id, businessId: biz.id } },
-    update: { role: 'OWNER' },
-    create: { userId: user.id, businessId: biz.id, role: 'OWNER' },
-  });
-
-  console.log('Super Admin User & BusinessMember upserted in PostgreSQL:', user.email, biz.id);
+  console.log('Super Admin User upserted cleanly in PostgreSQL:', user.email);
   await prisma.$disconnect();
 }
 

@@ -20,11 +20,28 @@ import {
   Sparkles,
   ChevronRight,
   X,
+  Building2,
+  Store,
+  Activity,
+  Bell,
+  LifeBuoy,
+  Radio,
+  TrendingUp,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 
-const navigationItems = [
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+  badge?: string;
+  countKey?: 'orders' | 'followups' | 'payments';
+}
+
+// Brand Dashboard Merchant Navigation Items
+const brandNavigationItems: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Conversations', href: '/conversations', icon: MessageSquare, badge: 'WhatsApp' },
   { name: 'AI Engine', href: '/ai', icon: Sparkles, badge: 'RAG' },
@@ -38,7 +55,23 @@ const navigationItems = [
   { name: 'Shipping & Couriers', href: '/shipping', icon: Truck },
   { name: 'Returns & Exchanges', href: '/returns', icon: RotateCcw },
   { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Super-Admin Portal', href: '/admin', icon: ShieldCheck, badge: 'Platform' },
+];
+
+// Super Admin Platform Control Plane Navigation Items (Strictly SaaS Operations)
+const superAdminControlPlaneItems: NavigationItem[] = [
+  { name: 'Platform Overview', href: '/admin', icon: ShieldCheck },
+  { name: 'Tenant Brands', href: '/admin', icon: Building2, badge: 'Brands' },
+  { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Integrations', href: '/admin/integrations', icon: Radio },
+  { name: 'Billing', href: '/admin/billing', icon: CreditCard },
+  { name: 'Usage & Costs', href: '/admin/usage', icon: TrendingUp },
+  { name: 'Platform Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Support Inspector', href: '/admin/support', icon: LifeBuoy, badge: 'Read-Only' },
+  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
+  { name: 'System Health', href: '/admin/system-health', icon: Activity },
+  { name: 'Security & Audit', href: '/admin/security', icon: Lock },
+  { name: 'Platform Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Switch to Store View', href: '/dashboard', icon: Store, badge: 'Brand View' },
 ];
 
 interface SidebarProps {
@@ -52,6 +85,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, activeBusinessId } = useAuth();
   const isSuperAdmin = user?.platformRole === 'SUPER_ADMIN';
+  const isAdminRoute = pathname?.startsWith('/admin');
 
   const [counts, setCounts] = useState<{ orders: number; followups: number; payments: number }>(
     () => globalSidebarCountsCache || { orders: 0, followups: 0, payments: 0 }
@@ -60,7 +94,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   useEffect(() => {
     let isMounted = true;
     const fetchCounts = async () => {
-      if (!activeBusinessId) return;
+      if (!activeBusinessId || isAdminRoute) return;
       try {
         const data = await api.get<{ orders: number; followups: number; payments: number }>('/api/analytics/counts');
         if (isMounted && data) {
@@ -73,7 +107,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           setCounts(newCounts);
         }
       } catch (err) {
-        // Fallback in case endpoint is unavailable
         try {
           const [ordersData, followupsData, paymentsData] = await Promise.all([
             api.get<any[]>('/api/orders').catch(() => []),
@@ -106,7 +139,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       isMounted = false;
       window.removeEventListener('selldesk-counts-update', handleUpdate);
     };
-  }, [activeBusinessId]);
+  }, [activeBusinessId, isAdminRoute]);
 
   const userInitials = user?.fullName
     ? user.fullName
@@ -116,6 +149,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         .toUpperCase()
         .slice(0, 2)
     : 'SD';
+
+  const activeNavigationList = isAdminRoute
+    ? superAdminControlPlaneItems
+    : brandNavigationItems;
 
   return (
     <>
@@ -157,19 +194,34 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               width: '2.375rem',
               height: '2.375rem',
               borderRadius: '0.625rem',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              background: isAdminRoute
+                ? 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)'
+                : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0.25rem 0.875rem rgba(16, 185, 129, 0.3)'
+              boxShadow: isAdminRoute
+                ? '0 0.25rem 0.875rem rgba(99, 102, 241, 0.3)'
+                : '0 0.25rem 0.875rem rgba(16, 185, 129, 0.3)'
             }}>
-              <Sparkles style={{ width: '1.25rem', height: '1.25rem', color: '#FFF' }} />
+              {isAdminRoute ? (
+                <ShieldCheck style={{ width: '1.25rem', height: '1.25rem', color: '#FFF' }} />
+              ) : (
+                <Sparkles style={{ width: '1.25rem', height: '1.25rem', color: '#FFF' }} />
+              )}
             </div>
             <div>
               <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                SellDesk <span style={{ fontSize: '0.65rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', textTransform: 'uppercase' }}>SaaS</span>
+                SellDesk <span style={{
+                  fontSize: '0.65rem',
+                  background: isAdminRoute ? 'rgba(99, 102, 241, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                  color: isAdminRoute ? '#818CF8' : '#34D399',
+                  padding: '0.125rem 0.375rem',
+                  borderRadius: '0.25rem',
+                  textTransform: 'uppercase'
+                }}>{isAdminRoute ? 'Admin' : 'SaaS'}</span>
               </h1>
-              <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>WhatsApp Commerce</p>
+              <p style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{isAdminRoute ? 'Platform Control Plane' : 'WhatsApp Commerce'}</p>
             </div>
           </div>
 
@@ -188,54 +240,88 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         {/* Navigation Links */}
         <nav style={{ padding: '1rem 0.75rem', flex: 1, overflowY: 'auto' }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.08em', padding: '0.5rem 0.75rem', marginBottom: '0.25rem' }}>
-            Main Menu
+            {isAdminRoute ? 'SaaS Operations' : 'Main Menu'}
           </div>
-          {navigationItems
-            .filter((item) => isSuperAdmin || item.href !== '/admin')
-            .map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              const countValue = item.countKey ? counts[item.countKey as keyof typeof counts] : undefined;
+          {activeNavigationList.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            const countValue = !isAdminRoute && item.countKey ? counts[item.countKey] : undefined;
 
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={onClose}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.625rem 0.875rem',
-                    borderRadius: '0.625rem',
-                    marginBottom: '0.25rem',
-                    fontSize: '0.875rem',
-                    fontWeight: isActive ? 600 : 500,
-                    color: isActive ? '#FFFFFF' : '#9CA3AF',
-                    background: isActive ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)' : 'transparent',
-                    borderLeft: isActive ? '0.1875rem solid #10B981' : '0.1875rem solid transparent',
-                    textDecoration: 'none',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Icon style={{ width: '1.125rem', height: '1.125rem', color: isActive ? '#34D399' : '#6B7280' }} />
-                    <span>{item.name}</span>
-                  </div>
-                  {item.badge && (
-                    <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '0.125rem 0.375rem' }}>{item.badge}</span>
-                  )}
-                  {countValue !== undefined && (
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'rgba(255, 255, 255, 0.1)', color: '#D1D5DB', padding: '0.125rem 0.5rem', borderRadius: '999px' }}>
-                      {countValue}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.625rem',
+                  marginBottom: '0.25rem',
+                  fontSize: '0.825rem',
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? '#FFFFFF' : '#9CA3AF',
+                  background: isActive
+                    ? (isAdminRoute ? 'linear-gradient(90deg, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.05) 100%)' : 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)')
+                    : 'transparent',
+                  borderLeft: isActive
+                    ? (isAdminRoute ? '0.1875rem solid #6366F1' : '0.1875rem solid #10B981')
+                    : '0.1875rem solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.15s ease',
+                  gap: '0.5rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
+                  <Icon style={{ width: '1.125rem', height: '1.125rem', flexShrink: 0, color: isActive ? (isAdminRoute ? '#818CF8' : '#34D399') : '#6B7280' }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span className={isAdminRoute ? 'badge badge-indigo' : 'badge badge-success'} style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1 }}>{item.badge}</span>
+                )}
+                {countValue !== undefined && (
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(255, 255, 255, 0.1)', color: '#D1D5DB', padding: '0.125rem 0.5rem', borderRadius: '999px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {countValue}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+
+          {/* If Super Admin is viewing Brand Dashboard, provide explicit switcher link at bottom of nav */}
+          {isSuperAdmin && !isAdminRoute && (
+            <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '0.0625rem solid rgba(255, 255, 255, 0.08)' }}>
+              <Link
+                href="/admin"
+                onClick={onClose}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.625rem',
+                  fontSize: '0.825rem',
+                  fontWeight: 600,
+                  color: '#818CF8',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  border: '0.0625rem solid rgba(99, 102, 241, 0.25)',
+                  textDecoration: 'none',
+                  transition: 'all 0.15s ease',
+                  gap: '0.5rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
+                  <ShieldCheck style={{ width: '1.125rem', height: '1.125rem', flexShrink: 0, color: '#818CF8' }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Super-Admin Portal</span>
+                </div>
+                <span className="badge badge-indigo" style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1 }}>Platform</span>
+              </Link>
+            </div>
+          )}
         </nav>
 
-        {/* Seller Account Footprint */}
+        {/* User Account Footprint */}
         <div style={{ padding: '1rem', borderTop: '0.0625rem solid rgba(255, 255, 255, 0.06)', background: 'rgba(17, 24, 39, 0.4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -244,7 +330,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               </div>
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#FFF' }}>{user?.fullName || 'Seller Account'}</div>
-                <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{user?.email || ''}</div>
+                <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
+                  {isSuperAdmin ? 'Platform Super Admin' : (user?.email || '')}
+                </div>
               </div>
             </div>
             <ChevronRight style={{ width: '1rem', height: '1rem', color: '#6B7280' }} />
@@ -273,4 +361,3 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     </>
   );
 }
-

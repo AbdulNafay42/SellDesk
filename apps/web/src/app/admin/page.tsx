@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
 import {
   ShieldCheck,
   Building2,
@@ -44,7 +42,6 @@ export default function AdminPortalPage() {
   const { user, isLoading } = useAuth();
   const [tenants, setTenants] = useState<ClientTenantBrand[]>([]);
   const [isFetching, setIsFetching] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const fetchTenants = async () => {
@@ -159,11 +156,7 @@ export default function AdminPortalPage() {
   const totalOrders = tenants.reduce((sum, t) => sum + t.ordersCount, 0);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090D16', color: '#FFFFFF' }}>
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <Header onMenuToggle={() => setIsSidebarOpen(true)} />
-
-      <main style={{ backgroundColor: '#090D16' }} className="animate-fade-in">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
         {/* Header Title Section */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
@@ -193,21 +186,21 @@ export default function AdminPortalPage() {
           <div className="glass-card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Monthly SaaS MRR</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34D399', marginTop: '0.25rem' }}>
-              Rs {totalMRR.toLocaleString()} / mo
+              Rs {(totalMRR ?? 0).toLocaleString()} / mo
             </div>
           </div>
 
           <div className="glass-card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Total WhatsApp Orders</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#818CF8', marginTop: '0.25rem' }}>
-              {totalOrders.toLocaleString()} Orders
+              {(totalOrders ?? 0).toLocaleString()} Orders
             </div>
           </div>
 
           <div className="glass-card" style={{ padding: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>AI Messages Processed</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FBBF24', marginTop: '0.25rem' }}>
-              {(totalOrders * 4).toLocaleString()} Conversations
+              {((totalOrders ?? 0) * 4).toLocaleString()} Conversations
             </div>
           </div>
         </div>
@@ -256,7 +249,7 @@ export default function AdminPortalPage() {
                     <td style={{ padding: '1rem' }}>{getPlanBadge(ten.plan)}</td>
                     <td style={{ padding: '1rem' }}>
                       <div style={{ fontWeight: 700, color: '#FFF' }}>{ten.ordersCount} orders</div>
-                      <div style={{ fontSize: '0.75rem', color: '#34D399' }}>Rs {ten.monthlyRevenuePKR.toLocaleString()}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#34D399' }}>Rs {(ten.monthlyRevenuePKR ?? 0).toLocaleString()}</div>
                     </td>
                     <td style={{ padding: '1rem' }}>
                       {ten.status === 'APPROVED' || ten.status === 'ACTIVE' ? (
@@ -418,7 +411,6 @@ export default function AdminPortalPage() {
             </div>
           </div>
         )}
-      </main>
     </div>
   );
 }
