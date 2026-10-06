@@ -37,17 +37,18 @@ export default function AdminNotificationsPage() {
 
   return (
     <div style={{ color: '#F9FAFB' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="admin-header-row">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF' }}>
-            <Bell style={{ width: '2rem', height: '2rem', color: '#F59E0B' }} /> SaaS Platform Notifications & Alerts
+          <h1 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.6rem)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF', lineHeight: 1.25 }}>
+            <Bell style={{ width: '1.75rem', height: '1.75rem', color: '#F59E0B', flexShrink: 0 }} /> SaaS Platform Notifications & Alerts
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
             System-level notifications requiring platform administrative attention.
           </p>
         </div>
         <button
           onClick={fetchData}
+          className="admin-action-btn-mobile"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -70,11 +71,8 @@ export default function AdminNotificationsPage() {
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>Loading platform notifications...</div>
       ) : notifications.length === 0 ? (
-        <div style={{
-          background: 'rgba(17, 24, 39, 0.8)',
-          padding: '3.5rem 2rem',
-          borderRadius: '0.75rem',
-          border: '1px solid rgba(16, 185, 129, 0.25)',
+        <div className="glass-card" style={{
+          padding: '3rem 1.5rem',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -91,7 +89,7 @@ export default function AdminNotificationsPage() {
             alignItems: 'center',
             justifyContent: 'center',
             border: '1px solid rgba(16, 185, 129, 0.3)',
-            marginBottom: '0.5rem',
+            marginBottom: '0.25rem',
           }}>
             <CheckCircle2 style={{ width: '1.75rem', height: '1.75rem', color: '#34D399' }} />
           </div>
@@ -103,32 +101,29 @@ export default function AdminNotificationsPage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1rem' }}>
+        <div style={{ display: 'grid', gap: '0.875rem' }}>
           {notifications.map((n) => (
-            <div key={n.id} style={{
-              background: 'rgba(17, 24, 39, 0.8)',
+            <div key={n.id} className="glass-card" style={{
               padding: '1.25rem',
-              borderRadius: '0.75rem',
               borderLeft: n.type === 'WARNING' ? '4px solid #F59E0B' : n.type === 'ERROR' ? '4px solid #EF4444' : '4px solid #3B82F6',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              gap: '1rem',
+              flexWrap: 'wrap',
             }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#FFF' }}>{n.title}</div>
-                <div style={{ color: '#D1D5DB', fontSize: '0.9rem', marginTop: '0.25rem' }}>{n.message}</div>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#FFF' }}>{n.title}</div>
+                <div style={{ color: '#D1D5DB', fontSize: '0.85rem', marginTop: '0.25rem' }}>{n.message}</div>
               </div>
               <button
                 onClick={() => router.push(n.actionUrl)}
+                className="btn-secondary"
                 style={{
                   padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#FFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 View Action

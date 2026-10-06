@@ -37,17 +37,18 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div style={{ color: '#F9FAFB' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="admin-header-row">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF' }}>
-            <BarChart3 style={{ width: '2rem', height: '2rem', color: '#818CF8' }} /> SaaS Platform Growth Analytics
+          <h1 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.6rem)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF', lineHeight: 1.25 }}>
+            <BarChart3 style={{ width: '1.75rem', height: '1.75rem', color: '#818CF8', flexShrink: 0 }} /> SaaS Platform Growth Analytics
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
             Macro platform performance metrics calculated strictly from live database records.
           </p>
         </div>
         <button
           onClick={fetchData}
+          className="admin-action-btn-mobile"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -70,53 +71,53 @@ export default function AdminAnalyticsPage() {
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>Calculating platform analytics...</div>
       ) : (
-        <div style={{ display: 'grid', gap: '2rem' }}>
+        <div style={{ display: 'grid', gap: '1.5rem' }}>
           {/* Main KPI Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
-            <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div className="admin-metrics-grid">
+            <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: '#9CA3AF' }}>Total Tenant Brands</span>
-                <Building2 style={{ width: '1.25rem', height: '1.25rem', color: '#818CF8' }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Total Tenant Brands</span>
+                <Building2 style={{ width: '1.125rem', height: '1.125rem', color: '#818CF8', flexShrink: 0 }} />
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#FFF', marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>
                 {data?.overview?.totalBrands || 0}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#34D399', marginTop: '0.25rem' }}>
-                {data?.overview?.activeBrands || 0} Approved & Active
+              <div style={{ fontSize: '0.75rem', color: '#34D399', marginTop: '0.2rem' }}>
+                {data?.overview?.activeBrands || 0} Active
               </div>
             </div>
 
-            <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: '#9CA3AF' }}>Total Platform Users</span>
-                <Users style={{ width: '1.25rem', height: '1.25rem', color: '#34D399' }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Total Platform Users</span>
+                <Users style={{ width: '1.125rem', height: '1.125rem', color: '#34D399', flexShrink: 0 }} />
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#FFF', marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>
                 {data?.overview?.totalUsers || 0}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>Registered user accounts</div>
+              <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.2rem' }}>Registered accounts</div>
             </div>
 
-            <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: '#9CA3AF' }}>Total Orders Processed</span>
-                <ShoppingBag style={{ width: '1.25rem', height: '1.25rem', color: '#FBBF24' }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Total Orders</span>
+                <ShoppingBag style={{ width: '1.125rem', height: '1.125rem', color: '#FBBF24', flexShrink: 0 }} />
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#FFF', marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>
                 {data?.overview?.totalOrders || 0}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>Cross-tenant volume</div>
+              <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.2rem' }}>Cross-tenant volume</div>
             </div>
 
-            <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: '#9CA3AF' }}>WhatsApp Traffic</span>
-                <MessageSquare style={{ width: '1.25rem', height: '1.25rem', color: '#60A5FA' }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>WhatsApp Traffic</span>
+                <MessageSquare style={{ width: '1.125rem', height: '1.125rem', color: '#60A5FA', flexShrink: 0 }} />
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#FFF', marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>
                 {data?.overview?.totalMessages || 0}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: '0.25rem' }}>Messages processed</div>
+              <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.2rem' }}>Messages processed</div>
             </div>
           </div>
         </div>
