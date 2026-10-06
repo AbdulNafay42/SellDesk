@@ -1,0 +1,96 @@
+name: SellDesk CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    name: Continuous Integration & E2E Testing
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: selldesk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/selldesk?schema=public"
+      PORT: 4000
+      JWT_SECRET: "selldesk_super_secret_jwt_key_2026"
+      WHATSAPP_GRAPH_API_BASE_URL: "http://127.0.0.1:4005"
+      WHATSAPP_APP_SECRET: "selldesk_app_secret_dev_key_2026"
+      NEXT_PUBLIC_API_URL: "http://localhost:4000"
+      CI: true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+
+      - name: Setup PostgreSQL Database Schema
+        run: npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate
+
+      - name: TypeScript Checks
+        run: |
+          npx tsc --noEmit -p apps/api/tsconfig.json
+          npx tsc --noEmit -p apps/web/tsconfig.json
+
+      - name: Code Linting
+        run: npm --prefix apps/web run lint
+
+      - name: Build Workspaces (API & Web)
+        run: npm run build
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start API & Web Servers
+        run: |
+          npm --prefix apps/api run dev &
+          npm --prefix apps/web run dev -- -p 3005 &
+          echo "Waiting for API (port 4000) and Web (port 3005) to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:4000 > /dev/null && curl -s http://localhost:3005 > /dev/null; then
+              echo "✅ API and Web servers are ready!"
+              exit 0
+            fi
+            echo "Waiting for servers ($i/30)..."
+            sleep 2
+          done
+          echo "❌ Timed out waiting for servers to start"
+          exit 1
+
+      - name: Execute Playwright E2E Tests
+        run: npx playwright test
+
+      - name: Upload Playwright Report on Failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
