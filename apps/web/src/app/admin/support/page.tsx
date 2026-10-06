@@ -41,29 +41,29 @@ export default function AdminSupportInspectorPage() {
 
   return (
     <div style={{ color: '#F9FAFB' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="admin-header-row">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF' }}>
-            <LifeBuoy style={{ width: '2rem', height: '2rem', color: '#EC4899' }} /> Read-Only Support & Diagnostic Inspector
+          <h1 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.6rem)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF', lineHeight: 1.25 }}>
+            <LifeBuoy style={{ width: '1.75rem', height: '1.75rem', color: '#EC4899', flexShrink: 0 }} /> Read-Only Support & Diagnostic Inspector
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
             Inspect brand metadata, customer messages, orders, and catalogs for troubleshooting. Operational mutations are strictly blocked.
           </p>
         </div>
-        <div style={{ background: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.3)', padding: '0.5rem 1rem', borderRadius: '0.5rem', color: '#F472B6', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+        <div style={{ background: 'rgba(236, 72, 153, 0.1)', border: '1px solid rgba(236, 72, 153, 0.3)', padding: '0.5rem 0.875rem', borderRadius: '0.5rem', color: '#F472B6', fontSize: '0.78rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap', alignSelf: 'flex-start' }}>
           <Lock style={{ width: '0.875rem', height: '0.875rem' }} /> Read-Only Enforcement Active
         </div>
       </div>
 
       {/* Tab Switcher & Search */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setTab('conversations')}
             style={{
-              padding: '0.625rem 1.25rem',
+              padding: '0.5rem 1rem',
               borderRadius: '0.5rem',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               background: tab === 'conversations' ? '#EC4899' : 'rgba(255, 255, 255, 0.05)',
               color: tab === 'conversations' ? '#FFF' : '#9CA3AF',
@@ -72,16 +72,17 @@ export default function AdminSupportInspectorPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
+              whiteSpace: 'nowrap',
             }}
           >
-            <MessageSquare style={{ width: '1rem', height: '1rem' }} /> Conversations
+            <MessageSquare style={{ width: '0.875rem', height: '0.875rem' }} /> Conversations
           </button>
           <button
             onClick={() => setTab('orders')}
             style={{
-              padding: '0.625rem 1.25rem',
+              padding: '0.5rem 1rem',
               borderRadius: '0.5rem',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               background: tab === 'orders' ? '#EC4899' : 'rgba(255, 255, 255, 0.05)',
               color: tab === 'orders' ? '#FFF' : '#9CA3AF',
@@ -90,16 +91,17 @@ export default function AdminSupportInspectorPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
+              whiteSpace: 'nowrap',
             }}
           >
-            <ShoppingBag style={{ width: '1rem', height: '1rem' }} /> Orders
+            <ShoppingBag style={{ width: '0.875rem', height: '0.875rem' }} /> Orders
           </button>
           <button
             onClick={() => setTab('products')}
             style={{
-              padding: '0.625rem 1.25rem',
+              padding: '0.5rem 1rem',
               borderRadius: '0.5rem',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
               background: tab === 'products' ? '#EC4899' : 'rgba(255, 255, 255, 0.05)',
               color: tab === 'products' ? '#FFF' : '#9CA3AF',
@@ -108,13 +110,14 @@ export default function AdminSupportInspectorPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
+              whiteSpace: 'nowrap',
             }}
           >
-            <Package style={{ width: '1rem', height: '1rem' }} /> Catalogs
+            <Package style={{ width: '0.875rem', height: '0.875rem' }} /> Catalogs
           </button>
         </div>
 
-        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
           <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: '#6B7280' }} />
           <input
             type="text"
@@ -136,87 +139,93 @@ export default function AdminSupportInspectorPage() {
       </div>
 
       {/* Inspector Table */}
-      <div style={{ background: 'rgba(17, 24, 39, 0.8)', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)', overflow: 'hidden' }}>
+      <div className="glass-card" style={{ padding: '1rem', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>Inspecting merchant data...</div>
         ) : items.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>No records found for support inspection.</div>
         ) : tab === 'conversations' ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: 'rgba(31, 41, 55, 0.5)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
-                <th style={{ padding: '1rem' }}>Store Brand</th>
-                <th style={{ padding: '1rem' }}>Customer</th>
-                <th style={{ padding: '1rem' }}>Channel</th>
-                <th style={{ padding: '1rem' }}>Latest Message preview</th>
-                <th style={{ padding: '1rem' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                  <td style={{ padding: '1rem', fontWeight: 600, color: '#FFF' }}>{c.businessName}</td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ color: '#E5E7EB' }}>{c.customerName}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{c.customerPhone}</div>
-                  </td>
-                  <td style={{ padding: '1rem', color: '#34D399', fontWeight: 600 }}>{c.channel}</td>
-                  <td style={{ padding: '1rem', color: '#9CA3AF', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.recentMessages?.[0]?.text || 'No message content'}
-                  </td>
-                  <td style={{ padding: '1rem', color: '#F472B6', fontWeight: 600 }}>{c.status}</td>
+          <div className="table-responsive-container">
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Store Brand</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Customer</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Channel</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Latest Message preview</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((c) => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: '#FFF', whiteSpace: 'nowrap' }}>{c.businessName}</td>
+                    <td style={{ padding: '0.875rem 1rem', whiteSpace: 'nowrap' }}>
+                      <div style={{ color: '#E5E7EB' }}>{c.customerName}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{c.customerPhone}</div>
+                    </td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#34D399', fontWeight: 600, whiteSpace: 'nowrap' }}>{c.channel}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#9CA3AF', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.recentMessages?.[0]?.text || 'No message content'}
+                    </td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#F472B6', fontWeight: 600, whiteSpace: 'nowrap' }}>{c.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : tab === 'orders' ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: 'rgba(31, 41, 55, 0.5)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
-                <th style={{ padding: '1rem' }}>Order #</th>
-                <th style={{ padding: '1rem' }}>Store Brand</th>
-                <th style={{ padding: '1rem' }}>Customer</th>
-                <th style={{ padding: '1rem' }}>Total Amount</th>
-                <th style={{ padding: '1rem' }}>Order Status</th>
-                <th style={{ padding: '1rem' }}>Payment Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((o) => (
-                <tr key={o.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                  <td style={{ padding: '1rem', fontWeight: 700, color: '#818CF8' }}>{o.orderNumber}</td>
-                  <td style={{ padding: '1rem', fontWeight: 600, color: '#FFF' }}>{o.businessName}</td>
-                  <td style={{ padding: '1rem', color: '#E5E7EB' }}>{o.customerName}</td>
-                  <td style={{ padding: '1rem', color: '#34D399', fontWeight: 700 }}>Rs {(o.totalAmount ?? 0).toLocaleString()}</td>
-                  <td style={{ padding: '1rem', color: '#FBBF24', fontWeight: 600 }}>{o.status}</td>
-                  <td style={{ padding: '1rem', color: '#9CA3AF' }}>{o.paymentStatus}</td>
+          <div className="table-responsive-container">
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Order #</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Store Brand</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Customer</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Total Amount</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Order Status</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Payment Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((o) => (
+                  <tr key={o.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#818CF8', whiteSpace: 'nowrap' }}>{o.orderNumber}</td>
+                    <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: '#FFF', whiteSpace: 'nowrap' }}>{o.businessName}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#E5E7EB', whiteSpace: 'nowrap' }}>{o.customerName}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#34D399', fontWeight: 700, whiteSpace: 'nowrap' }}>Rs {(o.totalAmount ?? 0).toLocaleString()}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#FBBF24', fontWeight: 600, whiteSpace: 'nowrap' }}>{o.status}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#9CA3AF', whiteSpace: 'nowrap' }}>{o.paymentStatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: 'rgba(31, 41, 55, 0.5)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
-                <th style={{ padding: '1rem' }}>Product Name</th>
-                <th style={{ padding: '1rem' }}>Store Brand</th>
-                <th style={{ padding: '1rem' }}>Base Price</th>
-                <th style={{ padding: '1rem' }}>Variants Count</th>
-                <th style={{ padding: '1rem' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                  <td style={{ padding: '1rem', fontWeight: 600, color: '#FFF' }}>{p.name}</td>
-                  <td style={{ padding: '1rem', color: '#E5E7EB' }}>{p.businessName}</td>
-                  <td style={{ padding: '1rem', color: '#34D399', fontWeight: 700 }}>Rs {(p.basePrice ?? 0).toLocaleString()}</td>
-                  <td style={{ padding: '1rem', color: '#818CF8' }}>{p.variantsCount} variant(s)</td>
-                  <td style={{ padding: '1rem', color: '#9CA3AF' }}>{p.status}</td>
+          <div className="table-responsive-container">
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Product Name</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Store Brand</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Base Price</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Variants Count</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((p) => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: '#FFF', whiteSpace: 'nowrap' }}>{p.name}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#E5E7EB', whiteSpace: 'nowrap' }}>{p.businessName}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#34D399', fontWeight: 700, whiteSpace: 'nowrap' }}>Rs {(p.basePrice ?? 0).toLocaleString()}</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#818CF8', whiteSpace: 'nowrap' }}>{p.variantsCount} variant(s)</td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#9CA3AF', whiteSpace: 'nowrap' }}>{p.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

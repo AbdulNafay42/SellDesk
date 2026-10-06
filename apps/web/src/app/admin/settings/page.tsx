@@ -73,17 +73,19 @@ export default function AdminSettingsPage() {
 
   return (
     <div style={{ color: '#F9FAFB' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="admin-header-row">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF' }}>
-            <Settings style={{ width: '2rem', height: '2rem', color: '#818CF8' }} /> Platform Configuration & Feature Flags
+          <h1 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.6rem)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF', lineHeight: 1.25 }}>
+            <Settings style={{ width: '1.75rem', height: '1.75rem', color: '#818CF8', flexShrink: 0 }} />
+            <span>Platform Configuration & Feature Flags</span>
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
             Global platform environment settings and progressive feature flags. Secrets remain server-side.
           </p>
         </div>
         <button
           onClick={fetchData}
+          className="admin-action-btn-mobile"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -95,6 +97,8 @@ export default function AdminSettingsPage() {
             color: '#818CF8',
             cursor: 'pointer',
             fontWeight: 600,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <RefreshCw style={{ width: '1rem', height: '1rem' }} /> Refresh Config
@@ -106,25 +110,31 @@ export default function AdminSettingsPage() {
       ) : (
         <div style={{ display: 'grid', gap: '2rem' }}>
           {/* Feature Flags Section */}
-          <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#818CF8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sliders style={{ width: '1.25rem', height: '1.25rem' }} /> Platform Feature Flags (Progressive Rollout)
+              <Sliders style={{ width: '1.25rem', height: '1.25rem', flexShrink: 0 }} /> Platform Feature Flags (Progressive Rollout)
             </h2>
             <div style={{ display: 'grid', gap: '1rem' }}>
               {featureFlags.map((flag) => (
-                <div key={flag.key} style={{
-                  background: 'rgba(31, 41, 55, 0.5)',
-                  padding: '1.25rem',
-                  borderRadius: '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                }}>
-                  <div>
+                <div
+                  key={flag.key}
+                  className="feature-flag-card"
+                  style={{
+                    background: 'rgba(31, 41, 55, 0.5)',
+                    padding: '1.25rem',
+                    borderRadius: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ fontWeight: 700, color: '#FFF', fontSize: '1rem' }}>{flag.name}</div>
                     <div style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '0.25rem' }}>{flag.description}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6B7280', fontFamily: 'monospace', marginTop: '0.25rem' }}>Key: {flag.key}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280', fontFamily: 'monospace', marginTop: '0.25rem', wordBreak: 'break-all' }}>Key: {flag.key}</div>
                   </div>
                   <button
                     onClick={() => handleToggleFlag(flag.key, flag.isEnabled)}
@@ -138,6 +148,8 @@ export default function AdminSettingsPage() {
                       gap: '0.5rem',
                       fontWeight: 700,
                       fontSize: '0.9rem',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
                     }}
                   >
                     {flag.isEnabled ? (
@@ -156,23 +168,23 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Platform Settings Section */}
-          <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ background: 'rgba(17, 24, 39, 0.8)', padding: '1.25rem', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF', marginBottom: '1rem' }}>General System Settings</h2>
             <div style={{ display: 'grid', gap: '1.25rem' }}>
               {settings.map((s) => (
                 <div key={s.key} style={{ background: 'rgba(31, 41, 55, 0.5)', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <div>
-                      <div style={{ fontWeight: 700, color: '#818CF8', fontSize: '0.95rem' }}>{s.key}</div>
+                      <div style={{ fontWeight: 700, color: '#818CF8', fontSize: '0.95rem', wordBreak: 'break-all' }}>{s.key}</div>
                       <div style={{ color: '#9CA3AF', fontSize: '0.8rem' }}>{s.description} ({s.category})</div>
                     </div>
                     {s.isSecret && (
-                      <span style={{ fontSize: '0.7rem', padding: '0.125rem 0.5rem', borderRadius: '999px', background: 'rgba(239, 68, 68, 0.2)', color: '#F87171', fontWeight: 700 }}>
+                      <span style={{ fontSize: '0.7rem', padding: '0.125rem 0.5rem', borderRadius: '999px', background: 'rgba(239, 68, 68, 0.2)', color: '#F87171', fontWeight: 700, whiteSpace: 'nowrap' }}>
                         SECRET MASKED
                       </span>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div className="setting-input-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <input
                       type={s.isSecret ? 'password' : 'text'}
                       value={editingValues[s.key] ?? s.value}
@@ -180,6 +192,7 @@ export default function AdminSettingsPage() {
                       disabled={s.isSecret}
                       style={{
                         flex: 1,
+                        minWidth: '200px',
                         padding: '0.625rem 0.875rem',
                         borderRadius: '0.375rem',
                         background: 'rgba(17, 24, 39, 0.8)',
@@ -205,6 +218,8 @@ export default function AdminSettingsPage() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.375rem',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
                         }}
                       >
                         <Save style={{ width: '0.875rem', height: '0.875rem' }} /> {savingKey === s.key ? 'Saving...' : 'Save'}
@@ -217,6 +232,34 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          .admin-page-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+          .admin-page-header button {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .feature-flag-card {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+          }
+          .setting-input-row {
+            flex-direction: column !important;
+          }
+          .setting-input-row input {
+            width: 100% !important;
+          }
+          .setting-input-row button {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

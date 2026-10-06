@@ -73,11 +73,11 @@ export function AdminTopbar({ onMenuToggle }: AdminTopbarProps) {
               cursor: memberships.length > 0 ? 'pointer' : 'default',
             }}
           >
-            <ShieldCheck style={{ width: '1rem', height: '1rem', color: '#818CF8' }} />
-            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFF' }}>
+            <ShieldCheck style={{ width: '1rem', height: '1rem', color: '#818CF8', flexShrink: 0 }} />
+            <span className="admin-topbar-title-text" style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FFF', whiteSpace: 'nowrap' }}>
               Platform Control Plane
             </span>
-            <span className="badge badge-indigo" style={{ fontSize: '0.65rem' }}>SUPER ADMIN</span>
+            <span className="badge badge-indigo" style={{ fontSize: '0.65rem', whiteSpace: 'nowrap' }}>SUPER ADMIN</span>
             {memberships.length > 0 && (
               <ChevronDown style={{ width: '0.875rem', height: '0.875rem', color: '#9CA3AF' }} />
             )}
@@ -186,7 +186,7 @@ export function AdminTopbar({ onMenuToggle }: AdminTopbarProps) {
       </div>
 
       {/* Right: Search & Profile / Signout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <div className="search-hide-mobile" style={{ position: 'relative', width: '16rem' }}>
           <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: '#6B7280' }} />
           <input
@@ -199,8 +199,8 @@ export function AdminTopbar({ onMenuToggle }: AdminTopbarProps) {
 
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#FFFFFF' }}>{user.fullName}</span>
+            <div className="admin-user-text" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.825rem', fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap' }}>{user.fullName}</span>
               <span style={{ fontSize: '0.68rem', color: '#818CF8' }}>SUPER ADMIN</span>
             </div>
             <button
@@ -217,6 +217,7 @@ export function AdminTopbar({ onMenuToggle }: AdminTopbarProps) {
                 justifyContent: 'center',
                 color: '#FDA4AF',
                 cursor: 'pointer',
+                flexShrink: 0,
               }}
             >
               <LogOut style={{ width: '1rem', height: '1rem' }} />
@@ -239,6 +240,14 @@ export function AdminTopbar({ onMenuToggle }: AdminTopbarProps) {
             display: flex !important;
           }
           .search-hide-mobile {
+            display: none !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-topbar-title-text {
+            display: none !important;
+          }
+          .admin-user-text {
             display: none !important;
           }
         }

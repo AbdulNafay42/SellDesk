@@ -71,17 +71,18 @@ export default function AdminUsersPage() {
   return (
     <div style={{ color: '#F9FAFB' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="admin-header-row">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF' }}>
-            <Users style={{ width: '2rem', height: '2rem', color: '#818CF8' }} /> Platform Users Control Plane
+          <h1 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.6rem)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#FFF', lineHeight: 1.25 }}>
+            <Users style={{ width: '1.75rem', height: '1.75rem', color: '#818CF8', flexShrink: 0 }} /> Platform Users Control Plane
           </h1>
-          <p style={{ color: '#9CA3AF', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
             View and manage user accounts across all SellDesk tenants.
           </p>
         </div>
         <button
           onClick={fetchUsers}
+          className="admin-action-btn-mobile"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -93,6 +94,8 @@ export default function AdminUsersPage() {
             color: '#818CF8',
             cursor: 'pointer',
             fontWeight: 600,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <RefreshCw style={{ width: '1rem', height: '1rem' }} /> Refresh Users
@@ -101,7 +104,7 @@ export default function AdminUsersPage() {
 
       {/* Controls Bar */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
           <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: '#6B7280' }} />
           <input
             type="text"
@@ -120,20 +123,21 @@ export default function AdminUsersPage() {
             }}
           />
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {(['ALL', 'SUPER_ADMIN', 'USER'] as const).map((r) => (
             <button
               key={r}
               onClick={() => setRoleFilter(r)}
               style={{
-                padding: '0.625rem 1rem',
+                padding: '0.5rem 0.875rem',
                 borderRadius: '0.5rem',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 fontWeight: 600,
                 background: roleFilter === r ? '#6366F1' : 'rgba(255, 255, 255, 0.05)',
                 color: roleFilter === r ? '#FFF' : '#9CA3AF',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
               {r === 'ALL' ? 'All Roles' : r === 'SUPER_ADMIN' ? 'Super Admins' : 'Store Users'}
@@ -143,77 +147,79 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div style={{ background: 'rgba(17, 24, 39, 0.8)', borderRadius: '0.75rem', border: '1px solid rgba(255, 255, 255, 0.08)', overflow: 'hidden' }}>
+      <div className="glass-card" style={{ padding: '1rem', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>Loading platform users...</div>
         ) : users.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF' }}>No platform users found matching criteria.</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: 'rgba(31, 41, 55, 0.5)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
-                <th style={{ padding: '1rem' }}>User</th>
-                <th style={{ padding: '1rem' }}>Platform Role</th>
-                <th style={{ padding: '1rem' }}>Primary Business</th>
-                <th style={{ padding: '1rem' }}>Tenant Role</th>
-                <th style={{ padding: '1rem' }}>Joined Date</th>
-                <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#FFF' }}>{u.fullName}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{u.email}</div>
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    <span style={{
-                      padding: '0.25rem 0.625rem',
-                      borderRadius: '999px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      background: u.platformRole === 'SUPER_ADMIN' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(156, 163, 175, 0.15)',
-                      color: u.platformRole === 'SUPER_ADMIN' ? '#818CF8' : '#D1D5DB',
-                      border: u.platformRole === 'SUPER_ADMIN' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-                    }}>
-                      {u.platformRole}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem', color: u.primaryBusiness ? '#E5E7EB' : '#6B7280' }}>
-                    {u.primaryBusiness ? u.primaryBusiness.name : 'No Store'}
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    {u.primaryBusiness ? (
-                      <span style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 600 }}>{u.primaryBusiness.tenantRole}</span>
-                    ) : (
-                      <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>-</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '1rem', color: '#9CA3AF' }}>{u.createdAt}</td>
-                  <td style={{ padding: '1rem', textAlign: 'right' }}>
-                    <button
-                      onClick={() => handleInspectUser(u.id)}
-                      style={{
-                        padding: '0.375rem 0.75rem',
-                        borderRadius: '0.375rem',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: 'none',
-                        color: '#FFF',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.375rem',
-                      }}
-                    >
-                      <Eye style={{ width: '0.875rem', height: '0.875rem' }} /> Inspect
-                    </button>
-                  </td>
+          <div className="table-responsive-container">
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#9CA3AF' }}>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>User</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Platform Role</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Primary Business</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Tenant Role</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Joined Date</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <td style={{ padding: '0.875rem 1rem', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontWeight: 600, color: '#FFF' }}>{u.fullName}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#9CA3AF' }}>{u.email}</div>
+                    </td>
+                    <td style={{ padding: '0.875rem 1rem', whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        padding: '0.25rem 0.625rem',
+                        borderRadius: '999px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        background: u.platformRole === 'SUPER_ADMIN' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(156, 163, 175, 0.15)',
+                        color: u.platformRole === 'SUPER_ADMIN' ? '#818CF8' : '#D1D5DB',
+                        border: u.platformRole === 'SUPER_ADMIN' ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                      }}>
+                        {u.platformRole}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.875rem 1rem', color: u.primaryBusiness ? '#E5E7EB' : '#6B7280', whiteSpace: 'nowrap' }}>
+                      {u.primaryBusiness ? u.primaryBusiness.name : 'No Store'}
+                    </td>
+                    <td style={{ padding: '0.875rem 1rem', whiteSpace: 'nowrap' }}>
+                      {u.primaryBusiness ? (
+                        <span style={{ fontSize: '0.8rem', color: '#34D399', fontWeight: 600 }}>{u.primaryBusiness.tenantRole}</span>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>-</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.875rem 1rem', color: '#9CA3AF', whiteSpace: 'nowrap' }}>{u.createdAt}</td>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        onClick={() => handleInspectUser(u.id)}
+                        style={{
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: 'none',
+                          color: '#FFF',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                        }}
+                      >
+                        <Eye style={{ width: '0.875rem', height: '0.875rem' }} /> Inspect
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

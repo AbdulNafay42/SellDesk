@@ -156,57 +156,57 @@ export default function AdminPortalPage() {
   const totalOrders = tenants.reduce((sum, t) => sum + t.ordersCount, 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Header Title Section */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="admin-header-row">
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ShieldCheck style={{ width: '1.5rem', height: '1.5rem', color: '#6366F1' }} />
-              Super-Admin SaaS Platform Management
+            <h1 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.6rem)', fontWeight: 800, color: '#FFF', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', lineHeight: 1.25 }}>
+              <ShieldCheck style={{ width: '1.5rem', height: '1.5rem', color: '#6366F1', flexShrink: 0 }} />
+              <span>Super-Admin SaaS Platform Management</span>
             </h1>
-            <p style={{ fontSize: '0.9rem', color: '#9CA3AF', marginTop: '0.25rem' }}>
+            <p style={{ fontSize: '0.85rem', color: '#9CA3AF', marginTop: '0.35rem', lineHeight: 1.4 }}>
               Platform control panel for provisioning, monitoring, and managing Pakistani client clothing brands.
             </p>
           </div>
 
-          <button onClick={() => setIsProvisionModalOpen(true)} className="btn-primary">
+          <button onClick={() => setIsProvisionModalOpen(true)} className="btn-primary admin-action-btn-mobile" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
             <Plus style={{ width: '1rem', height: '1rem' }} /> Provision New Client Brand Store
           </button>
         </div>
 
         {/* Platform Overview Metric Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(13.5rem, 1fr))', gap: '1.25rem', marginBottom: '1.75rem' }}>
-          <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Total Registered Brands</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFF', marginTop: '0.25rem' }}>
+        <div className="admin-metrics-grid">
+          <div className="glass-card" style={{ padding: '0.875rem 1rem' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Registered Brands</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFF', marginTop: '0.2rem' }}>
               {tenants.length} Client Stores
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Monthly SaaS MRR</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34D399', marginTop: '0.25rem' }}>
+          <div className="glass-card" style={{ padding: '0.875rem 1rem' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Monthly SaaS MRR</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#34D399', marginTop: '0.2rem' }}>
               Rs {(totalMRR ?? 0).toLocaleString()} / mo
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Total WhatsApp Orders</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#818CF8', marginTop: '0.25rem' }}>
+          <div className="glass-card" style={{ padding: '0.875rem 1rem' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total WhatsApp Orders</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#818CF8', marginTop: '0.2rem' }}>
               {(totalOrders ?? 0).toLocaleString()} Orders
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>AI Messages Processed</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FBBF24', marginTop: '0.25rem' }}>
+          <div className="glass-card" style={{ padding: '0.875rem 1rem' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>AI Messages Processed</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FBBF24', marginTop: '0.2rem' }}>
               {((totalOrders ?? 0) * 4).toLocaleString()} Conversations
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1.125rem', height: '1.125rem', color: '#6B7280' }} />
             <input
@@ -220,38 +220,130 @@ export default function AdminPortalPage() {
           </div>
         </div>
 
-        {/* Client Brands Table */}
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <div className="table-responsive-container">
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+        {/* Client Brands Container */}
+        <div className="glass-card" style={{ padding: '1rem' }}>
+          {/* Mobile Card List View (< 640px) */}
+          <div className="admin-tenant-mobile-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            {filteredTenants.map((ten) => (
+              <div
+                key={ten.id}
+                style={{
+                  background: 'rgba(31, 41, 55, 0.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, color: '#FFF', fontSize: '1rem' }}>{ten.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '0.1rem' }}>
+                      slug: /{ten.slug} • {ten.city}
+                    </div>
+                  </div>
+                  <div style={{ flexShrink: 0 }}>
+                    {ten.status === 'APPROVED' || ten.status === 'ACTIVE' ? (
+                      <span className="badge badge-success">Active</span>
+                    ) : ten.status === 'PENDING' ? (
+                      <span className="badge badge-warning">Pending</span>
+                    ) : ten.status === 'TRIAL' ? (
+                      <span className="badge badge-warning">Trial</span>
+                    ) : (
+                      <span className="badge badge-rose">{ten.status || 'Suspended'}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: 'rgba(17, 24, 39, 0.6)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderRadius: '0.5rem',
+                    padding: '0.625rem 0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
+                  }}
+                >
+                  <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#E5E7EB' }}>{ten.ownerName}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#34D399', fontWeight: 600 }}>{ten.whatsappPhone}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#6B7280', overflowWrap: 'anywhere' }}>{ten.ownerEmail}</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {getPlanBadge(ten.plan)}
+                    <span style={{ fontSize: '0.75rem', color: '#9CA3AF', whiteSpace: 'nowrap' }}>
+                      {ten.ordersCount} orders • Rs {(ten.monthlyRevenuePKR ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div>
+                    {ten.status === 'PENDING' ? (
+                      <button
+                        onClick={() => handleApproveBusiness(ten.id, ten.name)}
+                        className="btn-primary"
+                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', gap: '0.25rem' }}
+                      >
+                        <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem' }} /> Approve
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleStatus(ten.id)}
+                        className="btn-secondary"
+                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', gap: '0.25rem' }}
+                      >
+                        {ten.status === 'APPROVED' || ten.status === 'ACTIVE' ? (
+                          <>
+                            <Ban style={{ width: '0.75rem', height: '0.75rem', color: '#F43F5E' }} /> Suspend
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 style={{ width: '0.75rem', height: '0.75rem', color: '#34D399' }} /> Activate
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View (>= 640px) */}
+          <div className="admin-tenant-desktop-table table-responsive-container">
+            <table style={{ width: '100%', minWidth: '720px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)', color: '#6B7280' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>Client Brand Store</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Owner Contact</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>SaaS Plan</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Store Volume</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Status</th>
-                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Client Brand Store</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Owner Contact</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>SaaS Plan</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Store Volume</th>
+                  <th style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTenants.map((ten) => (
                   <tr key={ten.id} style={{ borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 800, color: '#FFF' }}>{ten.name}</div>
                       <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>slug: /{ten.slug} • {ten.city}</div>
                     </td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 600, color: '#E5E7EB' }}>{ten.ownerName}</div>
                       <div style={{ fontSize: '0.8rem', color: '#34D399' }}>{ten.whatsappPhone}</div>
                       <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>{ten.ownerEmail}</div>
                     </td>
-                    <td style={{ padding: '1rem' }}>{getPlanBadge(ten.plan)}</td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>{getPlanBadge(ten.plan)}</td>
+                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 700, color: '#FFF' }}>{ten.ordersCount} orders</div>
                       <div style={{ fontSize: '0.75rem', color: '#34D399' }}>Rs {(ten.monthlyRevenuePKR ?? 0).toLocaleString()}</div>
                     </td>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       {ten.status === 'APPROVED' || ten.status === 'ACTIVE' ? (
                         <span className="badge badge-success">Active</span>
                       ) : ten.status === 'PENDING' ? (
@@ -262,7 +354,7 @@ export default function AdminPortalPage() {
                         <span className="badge badge-rose">{ten.status || 'Suspended'}</span>
                       )}
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
+                    <td style={{ padding: '1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {ten.status === 'PENDING' ? (
                         <button
                           onClick={() => handleApproveBusiness(ten.id, ten.name)}
@@ -296,6 +388,25 @@ export default function AdminPortalPage() {
           </div>
         </div>
 
+        <style jsx>{`
+          @media (max-width: 639px) {
+            .admin-tenant-desktop-table {
+              display: none !important;
+            }
+            .admin-tenant-mobile-list {
+              display: flex !important;
+            }
+          }
+          @media (min-width: 640px) {
+            .admin-tenant-desktop-table {
+              display: block !important;
+            }
+            .admin-tenant-mobile-list {
+              display: none !important;
+            }
+          }
+        `}</style>
+
         {/* Provision New Client Brand Store Drawer Modal */}
         {isProvisionModalOpen && (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(0.5rem)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -316,7 +427,7 @@ export default function AdminPortalPage() {
                   <input type="text" placeholder="e.g. Maria B. Official" className="input-glass" value={brandName} onChange={(e) => setBrandName(e.target.value)} required />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="grid-2col-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.8rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>Owner Full Name</label>
                     <input type="text" placeholder="Owner Name" className="input-glass" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} required />
@@ -327,7 +438,7 @@ export default function AdminPortalPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="grid-2col-responsive" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.8rem', color: '#9CA3AF', marginBottom: '0.25rem' }}>WhatsApp Business Number</label>
                     <input type="text" placeholder="+92 300 0000000" className="input-glass" value={whatsappPhone} onChange={(e) => setWhatsappPhone(e.target.value)} required />

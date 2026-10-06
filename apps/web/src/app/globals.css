@@ -260,6 +260,59 @@ h1, h2, h3, h4, h5, h6 {
    TABLET & MOBILE BREAKPOINTS (EXACT DIRECTIVES)
    ========================================================================== */
 
+/* Responsive Grid & Utilities */
+.admin-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .admin-metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+}
+
+.admin-header-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .admin-header-row {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.admin-action-btn-mobile {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .admin-action-btn-mobile {
+    width: auto;
+  }
+}
+
+/* Responsive Table Container Utility */
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive-container table {
+  min-width: 700px;
+}
+
 /* Tablet Breakpoint (@media (max-width: 1024px)) */
 @media (max-width: 1024px) {
   :root {
@@ -269,7 +322,7 @@ h1, h2, h3, h4, h5, h6 {
   main {
     margin-left: 0 !important;
     width: 100% !important;
-    padding: 1.25rem !important;
+    padding: 1.25rem 1rem !important;
   }
 
   .grid-2col-responsive {
@@ -288,7 +341,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   main {
-    padding: 1rem !important;
+    padding: 1rem 0.75rem !important;
   }
 
   .btn-primary, .btn-secondary {
